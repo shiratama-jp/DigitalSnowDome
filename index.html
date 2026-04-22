@@ -108,6 +108,56 @@ h1 {
   color: rgba(200,220,255,0.8);
   cursor: pointer;
 }
+/* インストール案内 */
+#install-banner {
+  display: none;
+  margin-top: 20px;
+  padding: 14px 22px;
+  max-width: min(88vw, 360px);
+  background: linear-gradient(135deg, rgba(40,60,110,0.55), rgba(20,30,60,0.55));
+  border: 1px solid rgba(180,210,255,0.25);
+  border-radius: 18px;
+  box-shadow: 0 6px 24px rgba(40,80,160,0.25),
+              inset 0 0 20px rgba(180,210,255,0.05);
+  text-align: center;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+#install-banner .install-title {
+  font-size: clamp(13px, 3.6vw, 15px);
+  font-weight: 900;
+  color: rgba(210,230,255,0.95);
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+#install-banner .install-sub {
+  font-size: clamp(11px, 3vw, 12px);
+  font-weight: 500;
+  color: rgba(180,200,230,0.75);
+  line-height: 1.6;
+}
+#install-banner .install-sub strong {
+  color: rgba(220,235,255,0.95);
+  font-weight: 900;
+}
+#install-btn {
+  font-family: 'Zen Maru Gothic', sans-serif;
+  font-size: clamp(13px, 3.6vw, 15px);
+  font-weight: 900;
+  padding: 10px 28px;
+  border-radius: 100px;
+  border: 1px solid rgba(180,210,255,0.4);
+  cursor: pointer;
+  background: linear-gradient(135deg, #4a7dd6, #6aa2e8);
+  color: #fff;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 14px rgba(80,140,230,0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+#install-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(80,140,230,0.55);
+}
 </style>
 </head>
 <body>
@@ -123,6 +173,11 @@ h1 {
 </div>
 
 <button id="permission-btn">❄️ センサーをつかう</button>
+
+<!-- インストール案内 -->
+<div id="install-banner">
+  <div id="install-content"></div>
+</div>
 
 <script>
 const canvas = document.getElementById('dome-canvas');
@@ -194,8 +249,10 @@ async function requestSensor() {
 function enableOrientation() {
   sensorReady = true;
   window.addEventListener('deviceorientation', (e) => {
-    tiltX = (e.gamma || 0) / 45;
-    tiltY = ((e.beta || 0) - 45) / 45;
+    // gamma: 左右の傾き（±90°）、そのまま水平ドリフトに
+    tiltX = (e.gamma || 0) / 60;
+    // beta: 前後の傾き。端末を立てて見る姿勢（beta≈90）をニュートラルに。
+    tiltY = ((e.beta || 90) - 90) / 60;
     tiltX = Math.max(-1, Math.min(1, tiltX));
     tiltY = Math.max(-1, Math.min(1, tiltY));
   });
@@ -209,8 +266,9 @@ function enableMotion() {
     const dy = a.y - lastAccel.y;
     const dz = a.z - lastAccel.z;
     const force = Math.sqrt(dx*dx + dy*dy + dz*dz);
-    if (force > 15) {
-      shakeForce = Math.min(shakeForce + force * 0.3, 30);
+    // 小さな揺れも拾う。shakeForce は「乱流エネルギー」として連続的に蓄積
+    if (force > 2) {
+      shakeForce = Math.min(shakeForce + force * 0.6, 22);
     }
     lastAccel = { x: a.x || 0, y: a.y || 0, z: a.z || 0 };
   });
@@ -495,26 +553,44 @@ function drawDomeGlass() {
   ctx.restore();
 }
 
-function update() {
-  const gravity = 0.06;
-  const tiltForce = 0.15;
+function respawnFromTop(s) {
+  // 上半分のランダムな位置から優しく落下開始
+  const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.9;
+  const r = RADIUS * (0.2 + Math.random() * 0.55);
+  s.x = CX + Math.cos(a) * r;
+  s.y = CY + Math.sin(a) * r;
+  s.vx = (Math.random() - 0.5) * 0.3;
+  s.vy = 0.1 + Math.random() * 0.3;
+}
 
-  // シェイク減衰
-  shakeForce *= 0.96;
-  if (shakeForce < 0.1) shakeForce = 0;
+function update() {
+  const gravity = 0.05;
+  const tiltForce = 0.12;
+
+  // シェイク減衰（少しゆっくり → ふわふわ感）
+  shakeForce *= 0.97;
+  if (shakeForce < 0.05) shakeForce = 0;
+
+  // シェイク由来の乱流強度（0〜1程度にマップ）
+  const turbulence = Math.min(shakeForce * 0.06, 0.6);
+  // 影響を受ける粒子の確率（軽い揺れなら一部だけ舞う）
+  const affectProb = Math.min(shakeForce * 0.08, 0.75);
 
   for (const s of snowflakes) {
     // 重力
     s.vy += gravity * s.depth;
-    // 傾き
+    // 傾き：水平ドリフトは強め、垂直寄与は控えめ（ニュートラル姿勢で余計な上下力を生まない）
     s.vx += tiltX * tiltForce * s.depth;
-    s.vy += tiltY * tiltForce * s.depth;
-    // シェイク
-    if (shakeForce > 0) {
-      s.vx += (Math.random() - 0.5) * shakeForce * 0.5 * s.depth;
-      s.vy += (Math.random() - 1.2) * shakeForce * 0.5 * s.depth;
+    s.vy += tiltY * tiltForce * 0.5 * s.depth;
+
+    // シェイク：粒子ごとに確率で小さな乱流を加える。一斉に動かないのでふわふわに
+    if (turbulence > 0.01 && Math.random() < affectProb) {
+      s.vx += (Math.random() - 0.5) * turbulence * s.depth * 1.4;
+      // 上向きバイアス少し（舞い上がる感じ）
+      s.vy += (Math.random() - 0.72) * turbulence * s.depth * 1.4;
     }
-    // 自動モード：横風だけ（舞い上げはgustで一括）
+
+    // 自動モード：横風
     if (autoSnow) {
       s.vx += (Math.random() - 0.5) * 0.1;
     }
@@ -533,16 +609,21 @@ function update() {
     const dy = s.y - CY;
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (dist > RADIUS - s.size - 2) {
-      // 円の内側に押し戻す
       const angle = Math.atan2(dy, dx);
       s.x = CX + Math.cos(angle) * (RADIUS - s.size - 3);
       s.y = CY + Math.sin(angle) * (RADIUS - s.size - 3);
-      // 反射（減衰付き）
+      // 反射（ほどよく弾性的に）
       const dot = s.vx * Math.cos(angle) + s.vy * Math.sin(angle);
-      s.vx -= 1.5 * dot * Math.cos(angle);
-      s.vy -= 1.5 * dot * Math.sin(angle);
-      s.vx *= 0.3;
-      s.vy *= 0.3;
+      s.vx -= 1.8 * dot * Math.cos(angle);
+      s.vy -= 1.8 * dot * Math.sin(angle);
+      s.vx *= 0.55;
+      s.vy *= 0.55;
+
+      // 上半分で壁に貼りついて止まりかけた粒子は天井から再投入（外周の白い帯が溜まらないように）
+      const speedSq = s.vx * s.vx + s.vy * s.vy;
+      if (speedSq < 0.08 && s.y < CY + RADIUS * 0.25) {
+        respawnFromTop(s);
+      }
     }
   }
 }
@@ -681,6 +762,62 @@ function stopAutoSnow() {
   tiltY = 0;
   shakeForce = 0;
 }
+
+// ===== インストール案内 =====
+(function() {
+  const banner = document.getElementById('install-banner');
+  const content = document.getElementById('install-content');
+
+  // すでにスタンドアロン起動ならバナー非表示
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (isStandalone) return;
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  let deferredPrompt = null;
+
+  function showTextGuide() {
+    if (isIOS) {
+      content.innerHTML =
+        '<div class="install-title">❄️ ホーム画面に追加しよう</div>' +
+        '<div class="install-sub">下の <strong>共有ボタン（□↑）</strong> から<br><strong>「ホーム画面に追加」</strong> をタップ</div>';
+    } else {
+      content.innerHTML =
+        '<div class="install-title">❄️ ホーム画面に追加しよう</div>' +
+        '<div class="install-sub">ブラウザのメニュー（⋮）から<br><strong>「ホーム画面に追加」</strong> を選択</div>';
+    }
+    banner.style.display = 'block';
+  }
+
+  if (isIOS) {
+    showTextGuide();
+  } else {
+    let prompted = false;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      prompted = true;
+      content.innerHTML =
+        '<div class="install-title">❄️ アプリとして使えるよ</div>' +
+        '<button id="install-btn">インストール ✨</button>';
+      banner.style.display = 'block';
+
+      document.getElementById('install-btn').addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const result = await deferredPrompt.userChoice;
+        if (result.outcome === 'accepted') banner.style.display = 'none';
+        deferredPrompt = null;
+      });
+    });
+
+    // beforeinstallprompt が来なければテキスト案内にフォールバック
+    setTimeout(() => { if (!prompted) showTextGuide(); }, 2500);
+
+    window.addEventListener('appinstalled', () => {
+      banner.style.display = 'none';
+    });
+  }
+})();
 
 // Service Worker 登録（PWA）
 if ('serviceWorker' in navigator) {
