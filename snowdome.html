@@ -55,11 +55,12 @@ h1 {
   margin: -6px auto 0;
   box-shadow: 0 6px 20px rgba(0,0,0,0.4);
   position: relative;
-  padding: 10px 16px 12px;
+  padding: 10px 14px 12px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 6px;
 }
+#clock { margin-right: auto; }
 #base::before {
   content: '';
   position: absolute;
@@ -75,11 +76,11 @@ h1 {
   letter-spacing: 2px;
   text-shadow: 0 1px 4px rgba(0,0,0,0.4);
 }
-#auto-btn {
+#auto-btn, #star-btn {
   font-family: 'Zen Maru Gothic', sans-serif;
   font-size: clamp(11px, 3vw, 13px);
   font-weight: 700;
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: 20px;
   border: 1.5px solid rgba(255,220,150,0.3);
   background: rgba(255,255,255,0.08);
@@ -87,14 +88,20 @@ h1 {
   cursor: pointer;
   transition: all 0.2s;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
-#auto-btn:hover {
+#auto-btn:hover, #star-btn:hover {
   background: rgba(255,255,255,0.15);
 }
 #auto-btn.active {
   background: rgba(100,180,255,0.2);
   border-color: rgba(100,180,255,0.5);
   color: rgba(180,220,255,0.9);
+}
+#star-btn.active {
+  background: rgba(255,220,100,0.2);
+  border-color: rgba(255,220,100,0.55);
+  color: rgba(255,240,190,0.95);
 }
 #permission-btn {
   display: none;
@@ -144,6 +151,7 @@ h1 {
 <div id="base">
   <div id="clock">00:00</div>
   <button id="auto-btn">❄️ こなゆき</button>
+  <button id="star-btn">⭐ ほし</button>
 </div>
 
 <button id="permission-btn">❄️ センサーをつかう</button>
@@ -171,6 +179,7 @@ let lastAccel = { x: 0, y: 0, z: 0 };
 let sensorReady = false;
 let autoSnow = false;
 let autoTimer = null;
+let particleMode = 'snow'; // 'snow' | 'star'
 
 // 雪の初期化
 function initSnow() {
@@ -470,6 +479,42 @@ function drawHouse(x, y) {
   ctx.fillRect(x - 5, y + 6, 10, 14);
 }
 
+function drawStarParticle(s) {
+  const twinkle = 0.5 + Math.sin(s.shimmer * 2) * 0.5;
+  const alpha = (s.opacity * 0.65 + twinkle * 0.35) * s.depth;
+  const size = Math.max(s.size * s.depth * 1.25, 1);
+
+  ctx.save();
+  ctx.translate(s.x, s.y);
+  ctx.rotate(s.shimmer * 0.25);
+
+  // 柔らかいハロ
+  ctx.globalAlpha = alpha * 0.45;
+  const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 2.8);
+  grad.addColorStop(0, 'rgba(255,255,230,1)');
+  grad.addColorStop(0.35, 'rgba(255,240,180,0.55)');
+  grad.addColorStop(1, 'rgba(255,240,180,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(-size * 2.8, -size * 2.8, size * 5.6, size * 5.6);
+
+  // 4方向の光線
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = '#fffde8';
+  const rayLen = size * 2.0;
+  const rayThin = Math.max(size * 0.15, 0.5);
+  ctx.fillRect(-rayThin, -rayLen, rayThin * 2, rayLen * 2);
+  ctx.fillRect(-rayLen, -rayThin, rayLen * 2, rayThin * 2);
+
+  // 中心の光
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(0, 0, size * 0.45, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
 function drawSnowflake(s) {
   const shimmer = Math.sin(s.shimmer) * 0.2;
   ctx.globalAlpha = (s.opacity + shimmer) * s.depth;
@@ -672,10 +717,11 @@ function render() {
   drawBackground();
   drawShootingStars();
 
-  // 雪（奥から手前へ描画）
+  // 雪・星（奥から手前へ描画）
   const sorted = [...snowflakes].sort((a, b) => a.depth - b.depth);
   for (const s of sorted) {
-    drawSnowflake(s);
+    if (particleMode === 'star') drawStarParticle(s);
+    else drawSnowflake(s);
   }
 
   drawDomeGlass();
@@ -733,6 +779,14 @@ function stopAutoSnow() {
   tiltY = 0;
   shakeForce = 0;
 }
+
+// 星モード切替
+const starBtn = document.getElementById('star-btn');
+starBtn.addEventListener('click', () => {
+  particleMode = particleMode === 'snow' ? 'star' : 'snow';
+  starBtn.classList.toggle('active', particleMode === 'star');
+  starBtn.textContent = particleMode === 'star' ? '❄️ ゆき' : '⭐ ほし';
+});
 
 // Service Worker 登録（PWA）
 if ('serviceWorker' in navigator) {

@@ -718,13 +718,15 @@ function buzz(pattern) {
 
 // ===== ボタン =====
 document.getElementById('spawn-btn').addEventListener('click', () => {
-  buzz(25);
+  // ブッ（体感できる長さに）
+  buzz(80);
   spawnCat();
 });
 
 document.getElementById('home-btn').addEventListener('click', () => {
   if (cats.length === 0) return;
-  buzz([40, 60, 40]);
+  // ブブブッ（帰還合図として強め）
+  buzz([80, 60, 80, 60, 120]);
   goingHome = true;
   // にゃーにゃー鳴きながら帰る
   let i = 0;
