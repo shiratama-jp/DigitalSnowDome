@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const CACHE_STATIC = `snowdome-static-${CACHE_VERSION}`;
 const CACHE_FONTS = `snowdome-fonts-${CACHE_VERSION}`;
 
@@ -18,7 +18,11 @@ const PRECACHE_URLS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_STATIC).then((cache) => cache.addAll(PRECACHE_URLS))
+    caches.open(CACHE_STATIC).then((cache) => {
+      // cache: 'reload' で HTTP キャッシュをバイパスし、必ずオリジンから最新を取得してキャッシュする
+      const requests = PRECACHE_URLS.map((url) => new Request(url, { cache: 'reload' }));
+      return cache.addAll(requests);
+    })
   );
   self.skipWaiting();
 });
@@ -31,6 +35,12 @@ self.addEventListener('activate', (event) => {
     ).then(() => self.clients.claim())
   );
 });
+
+function isHtmlLike(req) {
+  return req.mode === 'navigate' ||
+         req.destination === 'document' ||
+         req.destination === 'manifest';
+}
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
@@ -56,26 +66,37 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Same-origin: cache-first, fallback to network, fallback to index.html for navigations
-  if (url.origin === self.location.origin) {
+  if (url.origin !== self.location.origin) return;
+
+  // HTML / manifest: network-first。オンラインなら常に最新を届け、オフラインだけキャッシュへ
+  if (isHtmlLike(req)) {
     event.respondWith(
-      caches.match(req).then((cached) => {
-        if (cached) return cached;
-        return fetch(req).then((res) => {
-          if (res.ok && (res.type === 'basic' || res.type === 'default')) {
-            const copy = res.clone();
-            caches.open(CACHE_STATIC).then((cache) => cache.put(req, copy));
-          }
-          return res;
-        }).catch(() => {
-          if (req.mode === 'navigate') {
-            return caches.match('./index.html');
-          }
-          return Response.error();
-        });
-      })
+      fetch(req).then((res) => {
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE_STATIC).then((cache) => cache.put(req, copy));
+        }
+        return res;
+      }).catch(() =>
+        caches.match(req).then((cached) => cached || caches.match('./index.html'))
+      )
     );
+    return;
   }
+
+  // その他（アイコン等）: cache-first
+  event.respondWith(
+    caches.match(req).then((cached) => {
+      if (cached) return cached;
+      return fetch(req).then((res) => {
+        if (res.ok && (res.type === 'basic' || res.type === 'default')) {
+          const copy = res.clone();
+          caches.open(CACHE_STATIC).then((cache) => cache.put(req, copy));
+        }
+        return res;
+      }).catch(() => Response.error());
+    })
+  );
 });
 
 self.addEventListener('message', (event) => {
