@@ -714,6 +714,8 @@ function render() {
   update();
   maybeSpawnShootingStar();
   updateShootingStars();
+  // ドーム外に残るハロー残渣を毎フレーム消す（CSS円形クリップの境目に色が溜まるのを防ぐ）
+  ctx.clearRect(0, 0, SIZE, SIZE);
   drawBackground();
   drawShootingStars();
 
