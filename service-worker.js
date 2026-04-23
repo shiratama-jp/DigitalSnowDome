@@ -1,10 +1,12 @@
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_STATIC = `snowdome-static-${CACHE_VERSION}`;
 const CACHE_FONTS = `snowdome-fonts-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
   './',
   './index.html',
+  './snowdome.html',
+  './snow-nyarm.html',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',

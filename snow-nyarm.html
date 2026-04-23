@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2a3a50">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Snow Domes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>スノーニャーム</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Zen Maru Gothic', sans-serif;
+  background: #2a3a50;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+h1 {
+  font-size: clamp(16px, 4.5vw, 20px);
+  font-weight: 900;
+  color: rgba(255,230,180,0.7);
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+#dome-wrap {
+  position: relative;
+  width: min(90vw, 380px);
+  height: min(90vw, 380px);
+}
+#dome-canvas {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  border: 3px solid rgba(180,200,220,0.3);
+  box-shadow:
+    0 0 40px rgba(100,150,200,0.15),
+    0 0 80px rgba(100,150,200,0.08),
+    inset 0 0 30px rgba(200,230,255,0.05);
+}
+#base {
+  width: min(82vw, 360px);
+  background: linear-gradient(180deg, #8a7a50, #6a5a38, #5a4a28);
+  border-radius: 0 0 20px 20px;
+  margin: -6px auto 0;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  position: relative;
+  padding: 12px 14px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+#base::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%; height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(255,220,150,0.3), transparent);
+  border-radius: 2px;
+}
+#clock {
+  font-family: 'Zen Maru Gothic', sans-serif;
+  font-size: clamp(14px, 4vw, 20px);
+  font-weight: 900;
+  color: rgba(255,230,180,0.85);
+  letter-spacing: 2px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.base-btn {
+  font-family: 'Zen Maru Gothic', sans-serif;
+  font-size: clamp(10px, 2.8vw, 12px);
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(255,220,150,0.3);
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,230,180,0.7);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.base-btn:hover { background: rgba(255,255,255,0.15); }
+.base-btn.active {
+  background: rgba(255,180,100,0.2);
+  border-color: rgba(255,180,100,0.5);
+  color: rgba(255,220,180,0.9);
+}
+#cat-count {
+  position: absolute;
+  top: -18px;
+  right: 8px;
+  font-size: clamp(10px, 2.8vw, 12px);
+  font-weight: 900;
+  color: rgba(255,230,180,0.5);
+}
+#permission-btn {
+  display: none;
+  position: fixed;
+  bottom: 90px;
+  left: 50%; transform: translateX(-50%);
+  padding: 10px 24px;
+  font-family: 'Zen Maru Gothic', sans-serif;
+  font-size: 13px; font-weight: 700;
+  border: 2px solid rgba(255,220,150,0.3);
+  border-radius: 30px;
+  background: rgba(255,200,100,0.1);
+  color: rgba(255,220,150,0.7);
+  cursor: pointer;
+  z-index: 20;
+}
+/* 戻るボタン */
+.back-btn {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  padding: 6px 14px;
+  font-family: 'Zen Maru Gothic', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border: 1px solid rgba(255,220,180,0.25);
+  border-radius: 60px;
+  background: rgba(40,30,20,0.55);
+  color: rgba(255,230,190,0.8);
+  text-decoration: none;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100;
+  transition: background 0.15s, color 0.15s;
+}
+.back-btn:hover {
+  background: rgba(60,45,30,0.7);
+  color: rgba(255,240,210,0.95);
+}
+</style>
+</head>
+<body>
+
+<h1>🐱 スノーニャーム 🐱</h1>
+
+<div id="dome-wrap">
+  <canvas id="dome-canvas"></canvas>
+</div>
+<div id="base">
+  <div id="cat-count">🐱×0</div>
+  <div id="clock">00:00</div>
+  <button class="base-btn" id="spawn-btn">🐱 にゃーん</button>
+  <button class="base-btn" id="arashi-btn">🌀 ねこあらし</button>
+  <button class="base-btn" id="home-btn">🏠 おうち</button>
+</div>
+
+<button id="permission-btn">🎮 センサーをつかう</button>
+
+<a class="back-btn" href="./index.html">← もどる</a>
+
+<script>
+const canvas = document.getElementById('dome-canvas');
+const ctx = canvas.getContext('2d');
+
+const SIZE = 400;
+canvas.width = SIZE;
+canvas.height = SIZE;
+const CX = SIZE / 2, CY = SIZE / 2, RADIUS = SIZE / 2 - 4;
+
+// 猫パーティクル
+const cats = [];
+const CAT_EMOJIS = ['🐱','😺','😸','😻','🐈'];
+const HAMSTER_EMOJI = '🐹';
+const CAT_SIZE = 28;
+
+// 家の位置
+const HOUSE_X = CX - 75;
+const HOUSE_Y = CY + RADIUS * 0.42;
+
+// 傾き・シェイク
+let tiltX = 0, tiltY = 0;
+let shakeForce = 0;
+let lastAccel = { x: 0, y: 0, z: 0 };
+let sensorReady = false;
+let goingHome = false;
+let nekoArashi = false;
+let arashiTimer = null;
+
+// 雲の当たり判定（家の右上あたり）
+const CLOUD_X = HOUSE_X + 50;
+const CLOUD_Y = HOUSE_Y - 60;
+const CLOUD_RX = 30;
+const CLOUD_RY = 14;
+
+// 木の当たり判定
+const TREE_X = CX + 80;
+const TREE_Y = CY + RADIUS * 0.38;
+const TREE_CANOPY_X = TREE_X;
+const TREE_CANOPY_Y = TREE_Y - 10;
+const TREE_RX = 28;
+const TREE_RY = 24;
+
+// Web Audio API でにゃー音を生成
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playNya() {
+  const ac = getAudioCtx();
+  const osc = ac.createOscillator();
+  const gain = ac.createGain();
+  osc.connect(gain);
+  gain.connect(ac.destination);
+  osc.type = 'sine';
+  // にゃー: 高い周波数からスイープダウン
+  const baseFreq = 600 + Math.random() * 300;
+  osc.frequency.setValueAtTime(baseFreq, ac.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.6, ac.currentTime + 0.15);
+  osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.8, ac.currentTime + 0.25);
+  osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.3, ac.currentTime + 0.4);
+  gain.gain.setValueAtTime(0.15, ac.currentTime);
+  gain.gain.linearRampToValueAtTime(0.2, ac.currentTime + 0.05);
+  gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.4);
+  osc.start(ac.currentTime);
+  osc.stop(ac.currentTime + 0.4);
+
+  // ハーモニクス（倍音）で猫っぽさUP
+  const osc2 = ac.createOscillator();
+  const gain2 = ac.createGain();
+  osc2.connect(gain2);
+  gain2.connect(ac.destination);
+  osc2.type = 'triangle';
+  osc2.frequency.setValueAtTime(baseFreq * 1.5, ac.currentTime);
+  osc2.frequency.exponentialRampToValueAtTime(baseFreq * 0.9, ac.currentTime + 0.3);
+  gain2.gain.setValueAtTime(0.06, ac.currentTime);
+  gain2.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.35);
+  osc2.start(ac.currentTime);
+  osc2.stop(ac.currentTime + 0.35);
+}
+
+function spawnCat() {
+  // たまにハムスター（10%）
+  const emoji = Math.random() < 0.1
+    ? HAMSTER_EMOJI
+    : CAT_EMOJIS[Math.floor(Math.random() * CAT_EMOJIS.length)];
+  cats.push({
+    x: HOUSE_X,
+    y: HOUSE_Y - 10,
+    vx: (Math.random() - 0.5) * 3,
+    vy: -(3 + Math.random() * 5),
+    emoji,
+    size: CAT_SIZE * (0.85 + Math.random() * 0.3),
+    depth: 0.4 + Math.random() * 0.6,
+    rotation: 0,
+    rotSpeed: (Math.random() - 0.5) * 3,
+    shimmer: Math.random() * Math.PI * 2
+  });
+  updateCatCount();
+  playNya();
+}
+
+function updateCatCount() {
+  document.getElementById('cat-count').textContent = '🐱×' + cats.length;
+}
+
+// センサー
+async function requestSensor() {
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    try {
+      const perm = await DeviceOrientationEvent.requestPermission();
+      if (perm === 'granted') enableOrientation();
+    } catch(e) {}
+    try {
+      const perm2 = await DeviceMotionEvent.requestPermission();
+      if (perm2 === 'granted') enableMotion();
+    } catch(e) {}
+    document.getElementById('permission-btn').style.display = 'none';
+  }
+}
+
+function enableOrientation() {
+  sensorReady = true;
+  window.addEventListener('deviceorientation', (e) => {
+    tiltX = (e.gamma || 0) / 60;
+    tiltY = ((e.beta || 90) - 90) / 60;
+    tiltX = Math.max(-1, Math.min(1, tiltX));
+    tiltY = Math.max(-1, Math.min(1, tiltY));
+  });
+}
+
+function enableMotion() {
+  window.addEventListener('devicemotion', (e) => {
+    const a = e.accelerationIncludingGravity;
+    if (!a) return;
+    const dx = a.x - lastAccel.x;
+    const dy = a.y - lastAccel.y;
+    const dz = a.z - lastAccel.z;
+    const force = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    if (force > 12) {
+      // 振ったら猫を出す！
+      spawnCat();
+      shakeForce = Math.min(shakeForce + force * 0.4, 20);
+    }
+    lastAccel = { x: a.x || 0, y: a.y || 0, z: a.z || 0 };
+  });
+}
+
+function enableTouchFallback() {
+  let touching = false;
+  canvas.addEventListener('mousedown', () => { touching = true; });
+  canvas.addEventListener('mouseup', () => { touching = false; tiltX = 0; tiltY = 0; });
+  canvas.addEventListener('mousemove', (e) => {
+    if (!touching) return;
+    const rect = canvas.getBoundingClientRect();
+    tiltX = ((e.clientX - rect.left) / rect.width * 2 - 1) * 0.8;
+    tiltY = ((e.clientY - rect.top) / rect.height * 2 - 1) * 0.8;
+  });
+
+  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); touching = true; updateTouch(e); }, {passive:false});
+  canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (touching) updateTouch(e); }, {passive:false});
+  canvas.addEventListener('touchend', () => { touching = false; tiltX = 0; tiltY = 0; });
+
+  function updateTouch(e) {
+    const t = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    tiltX = ((t.clientX - rect.left) / rect.width * 2 - 1) * 0.8;
+    tiltY = ((t.clientY - rect.top) / rect.height * 2 - 1) * 0.8;
+  }
+}
+
+function initSensor() {
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    document.getElementById('permission-btn').style.display = 'block';
+    document.getElementById('permission-btn').addEventListener('click', requestSensor);
+  } else if ('DeviceOrientationEvent' in window) {
+    enableOrientation();
+    if ('DeviceMotionEvent' in window) enableMotion();
+    setTimeout(() => {
+      if (!sensorReady) enableTouchFallback();
+    }, 1500);
+  }
+  enableTouchFallback();
+
+  // 家の辺りをスワイプ上で猫を出す
+  let swipeStartY = 0;
+  let swipeStartX = 0;
+  let swipeActive = false;
+
+  canvas.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    swipeStartX = t.clientX;
+    swipeStartY = t.clientY;
+    swipeActive = true;
+  }, { passive: true });
+
+  canvas.addEventListener('touchend', (e) => {
+    if (!swipeActive) return;
+    swipeActive = false;
+    const t = e.changedTouches[0];
+    const dy = swipeStartY - t.clientY;
+    if (dy > 30) {
+      // 上スワイプ → 猫を出す
+      const rect = canvas.getBoundingClientRect();
+      const tx = (swipeStartX - rect.left) / rect.width * SIZE;
+      const ty = (swipeStartY - rect.top) / rect.height * SIZE;
+      // 家の近くかどうか判定（広めに取る）
+      const hdx = tx - HOUSE_X;
+      const hdy = ty - HOUSE_Y;
+      if (Math.sqrt(hdx*hdx + hdy*hdy) < 80) {
+        spawnCat();
+      }
+    }
+  }, { passive: true });
+
+  // マウスでも家をクリックで猫を出す
+  canvas.addEventListener('dblclick', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) / rect.width * SIZE;
+    const my = (e.clientY - rect.top) / rect.height * SIZE;
+    const hdx = mx - HOUSE_X;
+    const hdy = my - HOUSE_Y;
+    if (Math.sqrt(hdx*hdx + hdy*hdy) < 80) {
+      spawnCat();
+    }
+  });
+}
+
+// ===== 描画 =====
+function drawBackground() {
+  // ドーム円内にクリッピング
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2);
+  ctx.clip();
+
+  // 青空（明るく均一に）
+  const skyGrad = ctx.createLinearGradient(0, CY - RADIUS, 0, CY + RADIUS * 0.4);
+  skyGrad.addColorStop(0, '#55b8ff');
+  skyGrad.addColorStop(0.5, '#6cc8ff');
+  skyGrad.addColorStop(1, '#88ddff');
+  ctx.fillStyle = skyGrad;
+  ctx.beginPath();
+  ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 太陽
+  ctx.fillStyle = '#ffe860';
+  ctx.beginPath();
+  ctx.arc(310, 65, 22, 0, Math.PI * 2);
+  ctx.fill();
+  // 太陽の光芒
+  ctx.strokeStyle = 'rgba(255,232,96,0.3)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 8; i++) {
+    const a = (Math.PI * 2 / 8) * i + Date.now() * 0.0005;
+    ctx.beginPath();
+    ctx.moveTo(310 + Math.cos(a) * 26, 65 + Math.sin(a) * 26);
+    ctx.lineTo(310 + Math.cos(a) * 34, 65 + Math.sin(a) * 34);
+    ctx.stroke();
+  }
+
+  // 雲
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  const co = (Date.now() * 0.008) % (SIZE + 80) - 40;
+  ctx.beginPath(); ctx.ellipse(co, 50, 30, 14, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(co - 15, 54, 20, 10, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(co + 18, 54, 22, 11, 0, 0, Math.PI*2); ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  const co2 = ((Date.now() * 0.005) + 200) % (SIZE + 80) - 40;
+  ctx.beginPath(); ctx.ellipse(co2, 90, 22, 10, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(co2 + 14, 93, 16, 8, 0, 0, Math.PI*2); ctx.fill();
+
+  // 草原の地面
+  const groundGrad = ctx.createLinearGradient(0, CY + RADIUS * 0.4, 0, CY + RADIUS);
+  groundGrad.addColorStop(0, '#6abf3a');
+  groundGrad.addColorStop(0.5, '#4a9a28');
+  groundGrad.addColorStop(1, '#3a7a18');
+  ctx.fillStyle = groundGrad;
+  ctx.beginPath();
+  ctx.moveTo(CX - RADIUS, CY + RADIUS * 0.48);
+  ctx.quadraticCurveTo(CX - RADIUS * 0.5, CY + RADIUS * 0.42, CX, CY + RADIUS * 0.45);
+  ctx.quadraticCurveTo(CX + RADIUS * 0.5, CY + RADIUS * 0.50, CX + RADIUS, CY + RADIUS * 0.46);
+  ctx.lineTo(CX + RADIUS, CY + RADIUS);
+  ctx.arc(CX, CY, RADIUS, 0, Math.PI, false);
+  ctx.closePath();
+  ctx.fill();
+
+  // 草のディテール
+  ctx.strokeStyle = 'rgba(80,180,50,0.4)';
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < 20; i++) {
+    const gx = CX - RADIUS * 0.8 + (RADIUS * 1.6 / 20) * i + Math.sin(i*5)*5;
+    const gy = CY + RADIUS * 0.47 + Math.sin(gx * 0.03) * 5;
+    const sway = Math.sin(Date.now() * 0.002 + i) * 2;
+    ctx.beginPath();
+    ctx.moveTo(gx, gy);
+    ctx.quadraticCurveTo(gx + sway, gy - 8, gx + sway * 1.2, gy - 14);
+    ctx.stroke();
+  }
+
+  // 花
+  const flowerPos = [[CX+50, CY+RADIUS*0.50], [CX-40, CY+RADIUS*0.52], [CX+90, CY+RADIUS*0.55], [CX-90, CY+RADIUS*0.54]];
+  for (const [fx, fy] of flowerPos) {
+    // 茎
+    ctx.strokeStyle = '#3a8a20';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx, fy - 10); ctx.stroke();
+    // 花びら
+    const fc = ['#ff88aa','#ffaa44','#ff6688','#ffcc44'][Math.floor(fx) % 4];
+    ctx.fillStyle = fc;
+    for (let p = 0; p < 5; p++) {
+      const pa = (Math.PI * 2 / 5) * p;
+      ctx.beginPath();
+      ctx.ellipse(fx + Math.cos(pa) * 4, fy - 10 + Math.sin(pa) * 4, 3, 2, pa, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#ffee44';
+    ctx.beginPath(); ctx.arc(fx, fy - 10, 2, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // 木（右側）
+  drawTreeGreen(CX + 80, CY + RADIUS * 0.38);
+
+  // 家（左側）
+  drawHouse(HOUSE_X, HOUSE_Y);
+
+  // 家の右上の雲（当たり判定あり）
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.beginPath(); ctx.ellipse(CLOUD_X, CLOUD_Y, CLOUD_RX, CLOUD_RY, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(CLOUD_X - 16, CLOUD_Y + 3, 18, 10, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(CLOUD_X + 18, CLOUD_Y + 2, 16, 9, 0, 0, Math.PI*2); ctx.fill();
+  // 雲のハイライト
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.beginPath(); ctx.ellipse(CLOUD_X - 6, CLOUD_Y - 5, 14, 6, -0.2, 0, Math.PI*2); ctx.fill();
+
+  ctx.restore(); // クリッピング解除
+}
+
+function drawTreeGreen(x, y) {
+  // 幹
+  ctx.fillStyle = '#6a4a20';
+  ctx.fillRect(x - 5, y, 10, 22);
+  // 葉
+  ctx.fillStyle = '#2a8a30';
+  ctx.beginPath(); ctx.ellipse(x, y - 10, 28, 24, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#3a9a3a';
+  ctx.beginPath(); ctx.ellipse(x - 12, y - 4, 18, 16, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x + 14, y - 6, 16, 14, 0, 0, Math.PI*2); ctx.fill();
+}
+
+function drawHouse(x, y) {
+  // 壁
+  ctx.fillStyle = '#e8c898';
+  ctx.fillRect(x - 22, y - 12, 44, 32);
+  // 屋根
+  ctx.fillStyle = '#cc5533';
+  ctx.beginPath();
+  ctx.moveTo(x - 28, y - 12);
+  ctx.lineTo(x, y - 36);
+  ctx.lineTo(x + 28, y - 12);
+  ctx.closePath();
+  ctx.fill();
+  // 窓
+  ctx.fillStyle = '#88ccff';
+  ctx.fillRect(x - 14, y - 4, 10, 8);
+  ctx.fillRect(x + 4, y - 4, 10, 8);
+  ctx.strokeStyle = '#a08060';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x - 14, y - 4, 10, 8);
+  ctx.strokeRect(x + 4, y - 4, 10, 8);
+  // ドア（猫の出入口！）
+  ctx.fillStyle = '#8a6040';
+  ctx.fillRect(x - 6, y + 6, 12, 14);
+  // 猫ドア
+  ctx.fillStyle = '#5a3a20';
+  ctx.beginPath();
+  ctx.arc(x, y + 16, 5, Math.PI, 0);
+  ctx.fill();
+}
+
+function drawCat(c) {
+  ctx.save();
+  ctx.translate(c.x, c.y);
+  ctx.rotate(c.rotation * Math.PI / 180);
+  // 白い背景円
+  ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  ctx.beginPath();
+  ctx.arc(0, 0, c.size * 0.42, 0, Math.PI * 2);
+  ctx.fill();
+  // 絵文字
+  ctx.font = c.size + 'px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(c.emoji, 0, 0);
+  ctx.restore();
+}
+
+function drawDomeGlass() {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2);
+  ctx.clip();
+  // ハイライト
+  const hlGrad = ctx.createRadialGradient(CX - 40, CY - 60, 10, CX - 40, CY - 60, 120);
+  hlGrad.addColorStop(0, 'rgba(255,255,255,0.10)');
+  hlGrad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = hlGrad;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(CX, CY, RADIUS - 2, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ===== 物理 =====
+function update() {
+  const gravity = 0.05;
+  const tiltForce = 0.12;
+
+  shakeForce *= 0.97;
+  if (shakeForce < 0.05) shakeForce = 0;
+
+  const turbulence = Math.min(shakeForce * 0.06, 0.6);
+  const affectProb = Math.min(shakeForce * 0.08, 0.75);
+
+  for (const c of cats) {
+    // おうちに帰るモード
+    if (goingHome) {
+      const dx = HOUSE_X - c.x;
+      const dy = (HOUSE_Y - 10) - c.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist > 5) {
+        c.vx += dx * 0.02;
+        c.vy += dy * 0.02;
+        c.vx *= 0.95;
+        c.vy *= 0.95;
+      }
+    } else {
+      // 重力
+      c.vy += gravity * c.depth;
+      // 傾き
+      c.vx += tiltX * tiltForce * c.depth;
+      c.vy += tiltY * tiltForce * 0.5 * c.depth;
+      // シェイク
+      if (turbulence > 0.01 && Math.random() < affectProb) {
+        c.vx += (Math.random() - 0.5) * turbulence * c.depth * 1.4;
+        c.vy += (Math.random() - 0.72) * turbulence * c.depth * 1.4;
+      }
+    }
+
+    // 空気抵抗
+    c.vx *= 0.98;
+    c.vy *= 0.98;
+    // ゆらぎ
+    c.vx += Math.sin(Date.now() * 0.001 + c.shimmer) * 0.015;
+    c.shimmer += 0.02;
+
+    c.x += c.vx;
+    c.y += c.vy;
+    c.rotation += c.rotSpeed;
+    c.rotSpeed *= 0.995;
+
+    // 草原の地面判定（円の底ではなく草原の縦真ん中辺り）
+    const groundY = CY + RADIUS * 0.44 + Math.sin(c.x * 0.03) * 4;
+    if (c.y > groundY && c.vy > 0 && !goingHome) {
+      c.y = groundY;
+      c.vy = -Math.abs(c.vy) * 0.2; // ちょっとバウンド
+      c.vx *= 0.9;
+    }
+
+    // 雲の当たり判定（楕円）
+    if (!goingHome) {
+      const cdx = (c.x - CLOUD_X) / CLOUD_RX;
+      const cdy = (c.y - CLOUD_Y) / CLOUD_RY;
+      if (cdx * cdx + cdy * cdy < 1.2 && c.vy > 0) {
+        c.y = CLOUD_Y - CLOUD_RY * Math.sqrt(Math.max(0, 1 - cdx * cdx));
+        c.vy = -Math.abs(c.vy) * 0.15;
+        c.vx *= 0.85;
+      }
+    }
+
+    // 木の当たり判定（楕円の葉っぱ部分）
+    if (!goingHome) {
+      const tdx = (c.x - TREE_CANOPY_X) / TREE_RX;
+      const tdy = (c.y - TREE_CANOPY_Y) / TREE_RY;
+      if (tdx * tdx + tdy * tdy < 1.1 && c.vy > 0) {
+        c.y = TREE_CANOPY_Y - TREE_RY * Math.sqrt(Math.max(0, 1 - tdx * tdx));
+        c.vy = -Math.abs(c.vy) * 0.2;
+        c.vx *= 0.8;
+      }
+    }
+
+    // ドーム内に収める
+    const dx = c.x - CX;
+    const dy = c.y - CY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > RADIUS - c.size * 0.4 - 2) {
+      const angle = Math.atan2(dy, dx);
+      c.x = CX + Math.cos(angle) * (RADIUS - c.size * 0.4 - 3);
+      c.y = CY + Math.sin(angle) * (RADIUS - c.size * 0.4 - 3);
+      const dot = c.vx * Math.cos(angle) + c.vy * Math.sin(angle);
+      c.vx -= 1.8 * dot * Math.cos(angle);
+      c.vy -= 1.8 * dot * Math.sin(angle);
+      c.vx *= 0.55;
+      c.vy *= 0.55;
+      c.rotSpeed += (Math.random() - 0.5) * 2;
+    }
+  }
+
+  // おうち帰りモード：全員家に近づいたら消す
+  if (goingHome) {
+    const allHome = cats.every(c => {
+      const dx = HOUSE_X - c.x;
+      const dy = (HOUSE_Y - 10) - c.y;
+      return Math.sqrt(dx*dx + dy*dy) < 15;
+    });
+    if (allHome || cats.length === 0) {
+      cats.length = 0;
+      goingHome = false;
+      updateCatCount();
+    }
+  }
+}
+
+function render() {
+  update();
+  drawBackground();
+
+  // 猫（奥行きでソート）
+  ctx.globalAlpha = 1;
+  const sorted = [...cats].sort((a, b) => a.depth - b.depth);
+  for (const c of sorted) {
+    drawCat(c);
+  }
+
+  drawDomeGlass();
+  requestAnimationFrame(render);
+}
+
+// ===== ボタン =====
+document.getElementById('spawn-btn').addEventListener('click', () => {
+  spawnCat();
+});
+
+document.getElementById('home-btn').addEventListener('click', () => {
+  if (cats.length === 0) return;
+  goingHome = true;
+  // にゃーにゃー鳴きながら帰る
+  let i = 0;
+  const nyaInterval = setInterval(() => {
+    if (i >= Math.min(cats.length, 8)) { clearInterval(nyaInterval); return; }
+    playNya();
+    i++;
+  }, 150);
+});
+
+// ねこあらし
+const arashiBtn = document.getElementById('arashi-btn');
+arashiBtn.addEventListener('click', () => {
+  nekoArashi = !nekoArashi;
+  arashiBtn.classList.toggle('active', nekoArashi);
+  arashiBtn.textContent = nekoArashi ? '🌀 あらし！' : '🌀 ねこあらし';
+  if (nekoArashi) {
+    startNekoArashi();
+  } else {
+    stopNekoArashi();
+  }
+});
+
+function startNekoArashi() {
+  function shake() {
+    if (!nekoArashi) return;
+    for (const c of cats) {
+      if (c.y > CY - RADIUS * 0.1) {
+        c.vy = -(4 + Math.random() * 6);
+        c.vx = (Math.random() - 0.5) * 4;
+        c.rotSpeed += (Math.random() - 0.5) * 5;
+      }
+    }
+    arashiTimer = setTimeout(shake, 5000 + Math.random() * 4000);
+  }
+  shake();
+}
+
+function stopNekoArashi() {
+  if (arashiTimer) { clearTimeout(arashiTimer); arashiTimer = null; }
+}
+
+// ===== センサー =====
+initSensor();
+
+// ===== 時計 =====
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById('clock').textContent = h + ':' + m;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ===== 開始 =====
+render();
+
+// ===== Service Worker 登録（PWA） =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch((err) => {
+      console.warn('SW registration failed:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>

@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#0a1628">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="スノードーム">
+<meta name="apple-mobile-web-app-title" content="Snow Domes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>スノードーム</title>
+<title>Snow Domes</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
@@ -16,104 +16,100 @@
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  height: 100%;
+}
 body {
   font-family: 'Zen Maru Gothic', sans-serif;
-  background: #0a1628;
+  background:
+    radial-gradient(ellipse at top, #1a2a50 0%, #0a1628 55%, #05091a 100%);
   min-height: 100vh;
   min-height: 100dvh;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  overflow: hidden;
-  touch-action: none;
+  padding: 24px 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 h1 {
-  font-size: clamp(16px, 4.5vw, 20px);
+  font-size: clamp(22px, 7vw, 32px);
   font-weight: 900;
-  color: rgba(200,220,255,0.7);
+  color: rgba(220,235,255,0.95);
+  letter-spacing: 3px;
+  margin-bottom: 4px;
+  text-shadow: 0 2px 12px rgba(80,140,230,0.3);
+}
+.subtitle {
+  font-size: clamp(11px, 3vw, 13px);
+  font-weight: 500;
+  color: rgba(180,200,230,0.6);
   letter-spacing: 2px;
-  margin-bottom: 8px;
+  margin-bottom: 32px;
 }
-#dome-wrap {
-  position: relative;
-  width: min(90vw, 380px);
-  height: min(90vw, 380px);
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 360px;
+  margin-bottom: 24px;
 }
-#dome-canvas {
-  width: 100%; height: 100%;
-  border-radius: 50%;
-  box-shadow:
-    0 0 40px rgba(100,150,255,0.15),
-    0 0 80px rgba(100,150,255,0.08),
-    inset 0 0 30px rgba(200,220,255,0.05);
-}
-/* 台座 */
-#base {
-  width: min(78vw, 340px);
-  background: linear-gradient(180deg, #8a6a40, #6a4a28, #5a3a18);
-  border-radius: 0 0 20px 20px;
-  margin: -6px auto 0;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-  position: relative;
-  padding: 10px 16px 12px;
+.menu-btn {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-}
-#base::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 10%; right: 10%; height: 3px;
-  background: linear-gradient(90deg, transparent, rgba(255,220,150,0.3), transparent);
-  border-radius: 2px;
-}
-#clock {
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 22px 24px;
   font-family: 'Zen Maru Gothic', sans-serif;
-  font-size: clamp(16px, 4.5vw, 22px);
+  font-size: clamp(15px, 4.5vw, 18px);
   font-weight: 900;
-  color: rgba(255,230,180,0.85);
   letter-spacing: 2px;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
-}
-#auto-btn {
-  font-family: 'Zen Maru Gothic', sans-serif;
-  font-size: clamp(11px, 3vw, 13px);
-  font-weight: 700;
-  padding: 6px 14px;
   border-radius: 20px;
-  border: 1.5px solid rgba(255,220,150,0.3);
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,230,180,0.7);
-  cursor: pointer;
-  transition: all 0.2s;
-  letter-spacing: 0.5px;
-}
-#auto-btn:hover {
-  background: rgba(255,255,255,0.15);
-}
-#auto-btn.active {
-  background: rgba(100,180,255,0.2);
-  border-color: rgba(100,180,255,0.5);
-  color: rgba(180,220,255,0.9);
-}
-#permission-btn {
-  display: none;
-  margin-top: 16px;
-  padding: 12px 28px;
-  font-family: 'Zen Maru Gothic', sans-serif;
-  font-size: 14px; font-weight: 900;
-  border: 2px solid rgba(200,220,255,0.3);
-  border-radius: 60px;
-  background: rgba(100,150,255,0.15);
-  color: rgba(200,220,255,0.8);
+  text-decoration: none;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   cursor: pointer;
 }
+.menu-btn .emoji {
+  font-size: 1.4em;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+.menu-btn.dome {
+  background: linear-gradient(135deg, rgba(50,80,140,0.65), rgba(20,35,70,0.6));
+  border: 1px solid rgba(180,210,255,0.3);
+  color: rgba(225,240,255,0.95);
+  box-shadow: 0 8px 28px rgba(40,80,160,0.3),
+              inset 0 0 24px rgba(180,210,255,0.08);
+}
+.menu-btn.dome:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(80,140,230,0.4),
+              inset 0 0 24px rgba(180,210,255,0.12);
+}
+.menu-btn.nyarm {
+  background: linear-gradient(135deg, rgba(90,75,55,0.65), rgba(60,50,40,0.6));
+  border: 1px solid rgba(255,220,160,0.3);
+  color: rgba(255,240,210,0.95);
+  box-shadow: 0 8px 28px rgba(120,90,50,0.25),
+              inset 0 0 24px rgba(255,220,160,0.08);
+}
+.menu-btn.nyarm:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(180,140,80,0.4),
+              inset 0 0 24px rgba(255,220,160,0.12);
+}
+
 /* インストール案内 */
 #install-banner {
   display: none;
-  margin-top: 20px;
+  margin-top: 8px;
   padding: 14px 22px;
-  max-width: min(88vw, 360px);
+  width: 100%;
+  max-width: 360px;
   background: linear-gradient(135deg, rgba(40,60,110,0.55), rgba(20,30,60,0.55));
   border: 1px solid rgba(180,210,255,0.25);
   border-radius: 18px;
@@ -162,17 +158,19 @@ h1 {
 </head>
 <body>
 
-<h1>❄️ スノードーム ❄️</h1>
+<h1>❄️ Snow Domes ❄️</h1>
+<div class="subtitle">ふりふりして あそぼう</div>
 
-<div id="dome-wrap">
-  <canvas id="dome-canvas"></canvas>
-</div>
-<div id="base">
-  <div id="clock">00:00</div>
-  <button id="auto-btn">❄️ こなゆき</button>
-</div>
-
-<button id="permission-btn">❄️ センサーをつかう</button>
+<nav class="menu">
+  <a class="menu-btn dome" href="./snowdome.html">
+    <span class="emoji">❄️</span>
+    <span>スノードーム</span>
+  </a>
+  <a class="menu-btn nyarm" href="./snow-nyarm.html">
+    <span class="emoji">🐱</span>
+    <span>スノーニャーム</span>
+  </a>
+</nav>
 
 <!-- インストール案内 -->
 <div id="install-banner">
@@ -180,595 +178,11 @@ h1 {
 </div>
 
 <script>
-const canvas = document.getElementById('dome-canvas');
-const ctx = canvas.getContext('2d');
-
-// 高解像度対応
-const SIZE = 400;
-canvas.width = SIZE;
-canvas.height = SIZE;
-const CX = SIZE / 2, CY = SIZE / 2, RADIUS = SIZE / 2 - 4;
-
-// 雪パーティクル
-const SNOW_COUNT = 200;
-const snowflakes = [];
-
-// 傾き・シェイク
-let tiltX = 0, tiltY = 0;
-let shakeForce = 0;
-let lastAccel = { x: 0, y: 0, z: 0 };
-let sensorReady = false;
-let autoSnow = false;
-let autoTimer = null;
-
-// 雪の初期化
-function initSnow() {
-  snowflakes.length = 0;
-  for (let i = 0; i < SNOW_COUNT; i++) {
-    snowflakes.push(createSnowflake(true));
-  }
-}
-
-function createSnowflake(settled) {
-  const angle = Math.random() * Math.PI * 2;
-  const dist = Math.random() * (RADIUS - 10);
-  const x = CX + Math.cos(angle) * dist;
-  const y = settled
-    ? CY + RADIUS * 0.5 + Math.random() * RADIUS * 0.4
-    : CY + Math.sin(angle) * dist;
-  const size = 1.5 + Math.random() * 3.5;
-  const depth = 0.3 + Math.random() * 0.7; // 奥行き
-  return {
-    x, y,
-    vx: 0, vy: 0,
-    size,
-    depth,
-    opacity: 0.4 + Math.random() * 0.6,
-    shimmer: Math.random() * Math.PI * 2,
-    shimmerSpeed: 0.02 + Math.random() * 0.03,
-    type: Math.random() < 0.15 ? 'crystal' : 'round' // たまにキラキラ結晶
-  };
-}
-
-// センサー
-async function requestSensor() {
-  if (typeof DeviceOrientationEvent !== 'undefined' &&
-      typeof DeviceOrientationEvent.requestPermission === 'function') {
-    try {
-      const perm = await DeviceOrientationEvent.requestPermission();
-      if (perm === 'granted') enableOrientation();
-    } catch(e) {}
-    try {
-      const perm2 = await DeviceMotionEvent.requestPermission();
-      if (perm2 === 'granted') enableMotion();
-    } catch(e) {}
-    document.getElementById('permission-btn').style.display = 'none';
-  }
-}
-
-function enableOrientation() {
-  sensorReady = true;
-  window.addEventListener('deviceorientation', (e) => {
-    // gamma: 左右の傾き（±90°）、そのまま水平ドリフトに
-    tiltX = (e.gamma || 0) / 60;
-    // beta: 前後の傾き。端末を立てて見る姿勢（beta≈90）をニュートラルに。
-    tiltY = ((e.beta || 90) - 90) / 60;
-    tiltX = Math.max(-1, Math.min(1, tiltX));
-    tiltY = Math.max(-1, Math.min(1, tiltY));
-  });
-}
-
-function enableMotion() {
-  window.addEventListener('devicemotion', (e) => {
-    const a = e.accelerationIncludingGravity;
-    if (!a) return;
-    const dx = a.x - lastAccel.x;
-    const dy = a.y - lastAccel.y;
-    const dz = a.z - lastAccel.z;
-    const force = Math.sqrt(dx*dx + dy*dy + dz*dz);
-    // 小さな揺れも拾う。shakeForce は「乱流エネルギー」として連続的に蓄積
-    if (force > 2) {
-      shakeForce = Math.min(shakeForce + force * 0.6, 22);
-    }
-    lastAccel = { x: a.x || 0, y: a.y || 0, z: a.z || 0 };
-  });
-}
-
-// タッチフォールバック（PC/タッチ）
-function enableTouchFallback() {
-  let touching = false;
-  canvas.addEventListener('mousedown', () => { touching = true; });
-  canvas.addEventListener('mouseup', () => { touching = false; tiltX = 0; tiltY = 0; });
-  canvas.addEventListener('mousemove', (e) => {
-    if (!touching) return;
-    const rect = canvas.getBoundingClientRect();
-    tiltX = ((e.clientX - rect.left) / rect.width * 2 - 1) * 0.8;
-    tiltY = ((e.clientY - rect.top) / rect.height * 2 - 1) * 0.8;
-  });
-
-  // ダブルクリック/ダブルタップでシェイク
-  let lastTap = 0;
-  canvas.addEventListener('click', () => {
-    const now = Date.now();
-    if (now - lastTap < 400) {
-      shakeForce = 20;
-    }
-    lastTap = now;
-  });
-
-  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); touching = true; updateTouch(e); }, {passive:false});
-  canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (touching) updateTouch(e); }, {passive:false});
-  canvas.addEventListener('touchend', () => { touching = false; tiltX = 0; tiltY = 0; });
-
-  function updateTouch(e) {
-    const t = e.touches[0];
-    const rect = canvas.getBoundingClientRect();
-    tiltX = ((t.clientX - rect.left) / rect.width * 2 - 1) * 0.8;
-    tiltY = ((t.clientY - rect.top) / rect.height * 2 - 1) * 0.8;
-  }
-}
-
-function initSensor() {
-  if (typeof DeviceOrientationEvent !== 'undefined' &&
-      typeof DeviceOrientationEvent.requestPermission === 'function') {
-    document.getElementById('permission-btn').style.display = 'block';
-    document.getElementById('permission-btn').addEventListener('click', requestSensor);
-  } else if ('DeviceOrientationEvent' in window) {
-    enableOrientation();
-    if ('DeviceMotionEvent' in window) enableMotion();
-    setTimeout(() => {
-      if (!sensorReady) enableTouchFallback();
-    }, 1500);
-  }
-  enableTouchFallback();
-}
-
-// 描画
-function drawBackground() {
-  // ドーム内の夜空
-  const nightGrad = ctx.createRadialGradient(CX, CY - 30, 20, CX, CY, RADIUS);
-  nightGrad.addColorStop(0, '#1a2a50');
-  nightGrad.addColorStop(0.5, '#0f1a38');
-  nightGrad.addColorStop(1, '#080e20');
-  ctx.fillStyle = nightGrad;
-  ctx.beginPath();
-  ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2);
-  ctx.fill();
-
-  // 星
-  ctx.fillStyle = 'rgba(255,255,200,0.6)';
-  const stars = [[80,60],[140,40],[280,55],[310,90],[100,100],[250,80],[180,30],[60,120],[320,130]];
-  for (const [sx, sy] of stars) {
-    const twinkle = 0.3 + Math.sin(Date.now() * 0.003 + sx) * 0.3;
-    ctx.globalAlpha = twinkle;
-    ctx.beginPath();
-    ctx.arc(sx, sy, 1.2, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-
-  // 月
-  ctx.fillStyle = '#ffe8aa';
-  ctx.beginPath();
-  ctx.arc(300, 70, 20, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#0f1a38';
-  ctx.beginPath();
-  ctx.arc(310, 65, 18, 0, Math.PI * 2);
-  ctx.fill();
-
-  // 雪の地面
-  ctx.fillStyle = '#e8eef8';
-  ctx.beginPath();
-  ctx.moveTo(CX - RADIUS, CY + RADIUS * 0.55);
-  ctx.quadraticCurveTo(CX - RADIUS * 0.5, CY + RADIUS * 0.45, CX, CY + RADIUS * 0.5);
-  ctx.quadraticCurveTo(CX + RADIUS * 0.5, CY + RADIUS * 0.55, CX + RADIUS, CY + RADIUS * 0.5);
-  ctx.lineTo(CX + RADIUS, CY + RADIUS);
-  ctx.arc(CX, CY, RADIUS, 0, Math.PI, false);
-  ctx.closePath();
-  ctx.fill();
-
-  // 雪面のハイライト
-  ctx.fillStyle = 'rgba(255,255,255,0.3)';
-  ctx.beginPath();
-  ctx.ellipse(CX - 30, CY + RADIUS * 0.52, 60, 8, -0.1, 0, Math.PI * 2);
-  ctx.fill();
-
-  // クリスマスツリー
-  drawTree(CX, CY + RADIUS * 0.35);
-
-  // 雪だるま
-  drawSnowman(CX + 70, CY + RADIUS * 0.45);
-
-  // 家
-  drawHouse(CX - 80, CY + RADIUS * 0.48);
-}
-
-function drawTree(x, y) {
-  // 幹
-  ctx.fillStyle = '#5a3a1a';
-  ctx.fillRect(x - 5, y, 10, 20);
-
-  // 葉（3段）
-  ctx.fillStyle = '#1a6a30';
-  ctx.beginPath(); ctx.moveTo(x, y - 55); ctx.lineTo(x - 22, y - 15); ctx.lineTo(x + 22, y - 15); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#1a7a38';
-  ctx.beginPath(); ctx.moveTo(x, y - 42); ctx.lineTo(x - 28, y - 2); ctx.lineTo(x + 28, y - 2); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#1a8a40';
-  ctx.beginPath(); ctx.moveTo(x, y - 28); ctx.lineTo(x - 34, y + 8); ctx.lineTo(x + 34, y + 8); ctx.closePath(); ctx.fill();
-
-  // 星トップ
-  ctx.fillStyle = '#ffe040';
-  ctx.font = '14px serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('⭐', x, y - 54);
-
-  // オーナメント
-  const ornaments = [
-    { x: x-12, y: y-8, c: '#ff4444' },
-    { x: x+14, y: y-12, c: '#4488ff' },
-    { x: x-8, y: y-25, c: '#ffaa00' },
-    { x: x+10, y: y-30, c: '#ff44aa' },
-    { x: x-16, y: y+2, c: '#44ddff' },
-    { x: x+6, y: y-2, c: '#ff6644' }
-  ];
-  for (const o of ornaments) {
-    ctx.fillStyle = o.c;
-    ctx.beginPath(); ctx.arc(o.x, o.y, 3.5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.beginPath(); ctx.arc(o.x - 1, o.y - 1, 1.5, 0, Math.PI * 2); ctx.fill();
-  }
-}
-
-function drawSnowman(x, y) {
-  // 体（下）
-  ctx.fillStyle = '#f0f0f8';
-  ctx.beginPath(); ctx.arc(x, y + 8, 18, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = 'rgba(180,190,210,0.3)';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  // 頭
-  ctx.fillStyle = '#f4f4fc';
-  ctx.beginPath(); ctx.arc(x, y - 14, 13, 0, Math.PI * 2); ctx.fill();
-  ctx.stroke();
-
-  // 目
-  ctx.fillStyle = '#222';
-  ctx.beginPath(); ctx.arc(x - 4, y - 17, 1.8, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(x + 4, y - 17, 1.8, 0, Math.PI * 2); ctx.fill();
-
-  // 鼻（にんじん）
-  ctx.fillStyle = '#ff8844';
-  ctx.beginPath();
-  ctx.moveTo(x, y - 13);
-  ctx.lineTo(x + 7, y - 12);
-  ctx.lineTo(x, y - 10);
-  ctx.closePath();
-  ctx.fill();
-
-  // マフラー
-  ctx.fillStyle = '#dd3344';
-  ctx.fillRect(x - 14, y - 4, 28, 5);
-  ctx.fillRect(x + 8, y - 4, 6, 14);
-
-  // 帽子
-  ctx.fillStyle = '#222';
-  ctx.fillRect(x - 10, y - 27, 20, 3);
-  ctx.fillRect(x - 7, y - 38, 14, 12);
-
-  // ボタン
-  ctx.fillStyle = '#222';
-  ctx.beginPath(); ctx.arc(x, y + 4, 2, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(x, y + 12, 2, 0, Math.PI * 2); ctx.fill();
-}
-
-function drawHouse(x, y) {
-  // 壁
-  ctx.fillStyle = '#c8a070';
-  ctx.fillRect(x - 20, y - 10, 40, 30);
-  // 屋根
-  ctx.fillStyle = '#884030';
-  ctx.beginPath();
-  ctx.moveTo(x - 26, y - 10);
-  ctx.lineTo(x, y - 32);
-  ctx.lineTo(x + 26, y - 10);
-  ctx.closePath();
-  ctx.fill();
-  // 雪の屋根
-  ctx.fillStyle = '#e8eef8';
-  ctx.beginPath();
-  ctx.moveTo(x - 28, y - 10);
-  ctx.quadraticCurveTo(x - 14, y - 16, x, y - 34);
-  ctx.quadraticCurveTo(x + 14, y - 16, x + 28, y - 10);
-  ctx.quadraticCurveTo(x + 14, y - 12, x, y - 14);
-  ctx.quadraticCurveTo(x - 14, y - 12, x - 28, y - 10);
-  ctx.closePath();
-  ctx.fill();
-  // 窓
-  ctx.fillStyle = '#ffdd66';
-  ctx.fillRect(x - 12, y - 4, 10, 8);
-  ctx.fillRect(x + 2, y - 4, 10, 8);
-  // 窓枠
-  ctx.strokeStyle = '#a08060';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(x - 12, y - 4, 10, 8);
-  ctx.strokeRect(x + 2, y - 4, 10, 8);
-  // ドア
-  ctx.fillStyle = '#8a6040';
-  ctx.fillRect(x - 5, y + 6, 10, 14);
-}
-
-function drawSnowflake(s) {
-  const shimmer = Math.sin(s.shimmer) * 0.2;
-  ctx.globalAlpha = (s.opacity + shimmer) * s.depth;
-
-  if (s.type === 'crystal') {
-    // キラキラ結晶
-    ctx.fillStyle = '#fff';
-    ctx.save();
-    ctx.translate(s.x, s.y);
-    ctx.rotate(s.shimmer * 2);
-    for (let i = 0; i < 6; i++) {
-      ctx.rotate(Math.PI / 3);
-      ctx.fillRect(-0.5, 0, 1, s.size * 2);
-    }
-    ctx.restore();
-    // 中心の光
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, s.size * 0.4, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(200,220,255,0.8)';
-    ctx.fill();
-  } else {
-    // 丸い雪
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, s.size * s.depth, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-}
-
-function drawDomeGlass() {
-  // ガラスの反射
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2);
-  ctx.clip();
-
-  // 上部のハイライト
-  const hlGrad = ctx.createRadialGradient(CX - 40, CY - 60, 10, CX - 40, CY - 60, 120);
-  hlGrad.addColorStop(0, 'rgba(255,255,255,0.12)');
-  hlGrad.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = hlGrad;
-  ctx.fillRect(0, 0, SIZE, SIZE);
-
-  // 縁の反射
-  ctx.strokeStyle = 'rgba(200,220,255,0.15)';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.arc(CX, CY, RADIUS - 2, 0, Math.PI * 2);
-  ctx.stroke();
-
-  ctx.restore();
-}
-
-function respawnFromTop(s) {
-  // 上半分のランダムな位置から優しく落下開始
-  const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.9;
-  const r = RADIUS * (0.2 + Math.random() * 0.55);
-  s.x = CX + Math.cos(a) * r;
-  s.y = CY + Math.sin(a) * r;
-  s.vx = (Math.random() - 0.5) * 0.3;
-  s.vy = 0.1 + Math.random() * 0.3;
-}
-
-function update() {
-  const gravity = 0.05;
-  const tiltForce = 0.12;
-
-  // シェイク減衰（少しゆっくり → ふわふわ感）
-  shakeForce *= 0.97;
-  if (shakeForce < 0.05) shakeForce = 0;
-
-  // シェイク由来の乱流強度（0〜1程度にマップ）
-  const turbulence = Math.min(shakeForce * 0.06, 0.6);
-  // 影響を受ける粒子の確率（軽い揺れなら一部だけ舞う）
-  const affectProb = Math.min(shakeForce * 0.08, 0.75);
-
-  for (const s of snowflakes) {
-    // 重力
-    s.vy += gravity * s.depth;
-    // 傾き：水平ドリフトは強め、垂直寄与は控えめ（ニュートラル姿勢で余計な上下力を生まない）
-    s.vx += tiltX * tiltForce * s.depth;
-    s.vy += tiltY * tiltForce * 0.5 * s.depth;
-
-    // シェイク：粒子ごとに確率で小さな乱流を加える。一斉に動かないのでふわふわに
-    if (turbulence > 0.01 && Math.random() < affectProb) {
-      s.vx += (Math.random() - 0.5) * turbulence * s.depth * 1.4;
-      // 上向きバイアス少し（舞い上がる感じ）
-      s.vy += (Math.random() - 0.72) * turbulence * s.depth * 1.4;
-    }
-
-    // 自動モード：横風
-    if (autoSnow) {
-      s.vx += (Math.random() - 0.5) * 0.1;
-    }
-    // 空気抵抗
-    s.vx *= 0.98;
-    s.vy *= 0.98;
-    // ゆらぎ
-    s.vx += Math.sin(Date.now() * 0.001 + s.shimmer) * 0.02;
-
-    s.x += s.vx;
-    s.y += s.vy;
-    s.shimmer += s.shimmerSpeed;
-
-    // ドーム内に収める
-    const dx = s.x - CX;
-    const dy = s.y - CY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist > RADIUS - s.size - 2) {
-      const angle = Math.atan2(dy, dx);
-      s.x = CX + Math.cos(angle) * (RADIUS - s.size - 3);
-      s.y = CY + Math.sin(angle) * (RADIUS - s.size - 3);
-      // 反射（ほどよく弾性的に）
-      const dot = s.vx * Math.cos(angle) + s.vy * Math.sin(angle);
-      s.vx -= 1.8 * dot * Math.cos(angle);
-      s.vy -= 1.8 * dot * Math.sin(angle);
-      s.vx *= 0.55;
-      s.vy *= 0.55;
-
-      // 上半分で壁に貼りついて止まりかけた粒子は天井から再投入（外周の白い帯が溜まらないように）
-      const speedSq = s.vx * s.vx + s.vy * s.vy;
-      if (speedSq < 0.08 && s.y < CY + RADIUS * 0.25) {
-        respawnFromTop(s);
-      }
-    }
-  }
-}
-
-// 流れ星
-let shootingStars = [];
-let lastShootingStar = 0;
-
-function maybeSpawnShootingStar() {
-  const now = Date.now();
-  // 平均8〜15秒に1回
-  if (now - lastShootingStar > 8000 + Math.random() * 7000) {
-    lastShootingStar = now;
-    if (Math.random() < 0.6) { // たまに出ない時もある
-      const startX = 40 + Math.random() * (SIZE * 0.5);
-      const startY = 30 + Math.random() * 60;
-      shootingStars.push({
-        x: startX, y: startY,
-        vx: 3 + Math.random() * 3,
-        vy: 1 + Math.random() * 1.5,
-        life: 1,
-        length: 30 + Math.random() * 40,
-        trail: []
-      });
-    }
-  }
-}
-
-function updateShootingStars() {
-  for (const ss of shootingStars) {
-    ss.trail.unshift({ x: ss.x, y: ss.y, alpha: ss.life });
-    if (ss.trail.length > 12) ss.trail.pop();
-    ss.x += ss.vx;
-    ss.y += ss.vy;
-    ss.life -= 0.025;
-  }
-  shootingStars = shootingStars.filter(ss => ss.life > 0);
-}
-
-function drawShootingStars() {
-  for (const ss of shootingStars) {
-    // 尾
-    for (let i = 0; i < ss.trail.length; i++) {
-      const t = ss.trail[i];
-      const alpha = t.alpha * (1 - i / ss.trail.length) * 0.6;
-      const width = (1 - i / ss.trail.length) * 2.5;
-      ctx.strokeStyle = `rgba(255,255,220,${alpha})`;
-      ctx.lineWidth = width;
-      ctx.lineCap = 'round';
-      if (i < ss.trail.length - 1) {
-        ctx.beginPath();
-        ctx.moveTo(ss.trail[i].x, ss.trail[i].y);
-        ctx.lineTo(ss.trail[i + 1].x, ss.trail[i + 1].y);
-        ctx.stroke();
-      }
-    }
-    // 先端の光
-    ctx.globalAlpha = ss.life;
-    ctx.fillStyle = '#fffde0';
-    ctx.beginPath();
-    ctx.arc(ss.x, ss.y, 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,200,0.4)';
-    ctx.beginPath();
-    ctx.arc(ss.x, ss.y, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-  }
-}
-
-function render() {
-  update();
-  maybeSpawnShootingStar();
-  updateShootingStars();
-  drawBackground();
-  drawShootingStars();
-
-  // 雪（奥から手前へ描画）
-  const sorted = [...snowflakes].sort((a, b) => a.depth - b.depth);
-  for (const s of sorted) {
-    drawSnowflake(s);
-  }
-
-  drawDomeGlass();
-
-  requestAnimationFrame(render);
-}
-
-// 開始
-initSnow();
-initSensor();
-render();
-
-// 時計
-function updateClock() {
-  const now = new Date();
-  const h = String(now.getHours()).padStart(2, '0');
-  const m = String(now.getMinutes()).padStart(2, '0');
-  document.getElementById('clock').textContent = h + ':' + m;
-}
-updateClock();
-setInterval(updateClock, 1000);
-
-// 自動雪
-const autoBtn = document.getElementById('auto-btn');
-autoBtn.addEventListener('click', () => {
-  autoSnow = !autoSnow;
-  autoBtn.classList.toggle('active', autoSnow);
-  autoBtn.textContent = autoSnow ? '❄️ ふぶき' : '❄️ こなゆき';
-  if (autoSnow) {
-    startAutoSnow();
-  } else {
-    stopAutoSnow();
-  }
-});
-
-function startAutoSnow() {
-  function shake() {
-    if (!autoSnow) return;
-    // ガッと振る：下にいる雪を一斉に舞い上げる
-    for (const s of snowflakes) {
-      if (s.y > CY - RADIUS * 0.1) {
-        s.vy = -(4 + Math.random() * 6);
-        s.vx = (Math.random() - 0.5) * 4;
-      }
-    }
-    // しばらく待って（雪が落ちるのを眺める）、また振る
-    autoTimer = setTimeout(shake, 5000 + Math.random() * 4000);
-  }
-  shake();
-}
-
-function stopAutoSnow() {
-  if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
-  tiltX = 0;
-  tiltY = 0;
-  shakeForce = 0;
-}
-
 // ===== インストール案内 =====
 (function() {
   const banner = document.getElementById('install-banner');
   const content = document.getElementById('install-content');
 
-  // すでにスタンドアロン起動ならバナー非表示
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   if (isStandalone) return;
 
@@ -810,7 +224,6 @@ function stopAutoSnow() {
       });
     });
 
-    // beforeinstallprompt が来なければテキスト案内にフォールバック
     setTimeout(() => { if (!prompted) showTextGuide(); }, 2500);
 
     window.addEventListener('appinstalled', () => {
@@ -819,7 +232,7 @@ function stopAutoSnow() {
   }
 })();
 
-// Service Worker 登録（PWA）
+// ===== Service Worker 登録（PWA） =====
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./service-worker.js').catch((err) => {
