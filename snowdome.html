@@ -209,7 +209,7 @@ h1 {
 </div>
 <div id="base">
   <div id="clock">00:00</div>
-  <button id="auto-btn">❄️ こなゆき</button>
+  <button id="auto-btn">❄️ ふきあげ</button>
   <button id="star-btn">⭐ ほし</button>
 </div>
 
@@ -815,12 +815,11 @@ function updateClock() {
 updateClock();
 setInterval(updateClock, 1000);
 
-// 自動雪
+// 自動雪（ラベル固定「ふきあげ」、active色で動作中を示す）
 const autoBtn = document.getElementById('auto-btn');
 autoBtn.addEventListener('click', () => {
   autoSnow = !autoSnow;
   autoBtn.classList.toggle('active', autoSnow);
-  autoBtn.textContent = autoSnow ? '❄️ ふぶき' : '❄️ こなゆき';
   if (autoSnow) {
     startAutoSnow();
   } else {
@@ -851,12 +850,11 @@ function stopAutoSnow() {
   shakeForce = 0;
 }
 
-// 星モード切替
+// 星モード切替（ラベル固定「⭐ ほし」、active色で星モード中を示す）
 const starBtn = document.getElementById('star-btn');
 starBtn.addEventListener('click', () => {
   particleMode = particleMode === 'snow' ? 'star' : 'snow';
   starBtn.classList.toggle('active', particleMode === 'star');
-  starBtn.textContent = particleMode === 'star' ? '❄️ ゆき' : '⭐ ほし';
 });
 
 // ===== トースト =====

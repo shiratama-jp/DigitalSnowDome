@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v9';
+const CACHE_VERSION = 'v10';
 const CACHE_STATIC = `snowdome-static-${CACHE_VERSION}`;
 const CACHE_FONTS = `snowdome-fonts-${CACHE_VERSION}`;
 
@@ -6,6 +6,7 @@ const PRECACHE_URLS = [
   './',
   './index.html',
   './snowdome.html',
+  './hoshifurase.html',
   './snow-nyarm.html',
   './manifest.json',
   './icons/icon-192.png',
