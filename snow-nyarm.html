@@ -709,13 +709,22 @@ function render() {
   requestAnimationFrame(render);
 }
 
+// ===== ハプティクス =====
+function buzz(pattern) {
+  if (navigator.vibrate) {
+    try { navigator.vibrate(pattern); } catch (e) {}
+  }
+}
+
 // ===== ボタン =====
 document.getElementById('spawn-btn').addEventListener('click', () => {
+  buzz(25);
   spawnCat();
 });
 
 document.getElementById('home-btn').addEventListener('click', () => {
   if (cats.length === 0) return;
+  buzz([40, 60, 40]);
   goingHome = true;
   // にゃーにゃー鳴きながら帰る
   let i = 0;
