@@ -186,6 +186,7 @@ const HOUSE_Y = CY + RADIUS * 0.42;
 let tiltX = 0, tiltY = 0;
 let shakeForce = 0;
 let lastAccel = { x: 0, y: 0, z: 0 };
+let motionBaseline = 0;  // 常時振動を吸収するベースライン
 let sensorReady = false;
 let goingHome = false;
 let nekoArashi = false;
@@ -304,10 +305,13 @@ function enableMotion() {
     const dy = a.y - lastAccel.y;
     const dz = a.z - lastAccel.z;
     const force = Math.sqrt(dx*dx + dy*dy + dz*dz);
-    if (force > 12) {
+    // ハイパスフィルタ：常時振動（車両等）は EMA ベースラインに吸収して差し引く
+    motionBaseline = motionBaseline * 0.98 + force * 0.02;
+    const netForce = force - motionBaseline;
+    if (netForce > 12) {
       // 振ったら猫を出す！
       spawnCat();
-      shakeForce = Math.min(shakeForce + force * 0.4, 20);
+      shakeForce = Math.min(shakeForce + netForce * 0.4, 20);
     }
     lastAccel = { x: a.x || 0, y: a.y || 0, z: a.z || 0 };
   });
