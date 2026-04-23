@@ -115,6 +115,65 @@ h1 {
   color: rgba(200,220,255,0.8);
   cursor: pointer;
 }
+/* 追加コントロール行（BGM・スリープ回避） */
+#controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: min(88vw, 360px);
+}
+.ctl-btn {
+  font-family: 'Zen Maru Gothic', sans-serif;
+  font-size: clamp(11px, 3vw, 13px);
+  font-weight: 700;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(200,220,255,0.22);
+  background: rgba(20,30,60,0.5);
+  color: rgba(200,220,255,0.75);
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  white-space: nowrap;
+}
+.ctl-btn:hover {
+  background: rgba(30,50,90,0.7);
+  color: rgba(220,235,255,0.95);
+}
+.ctl-btn.active {
+  background: rgba(100,180,255,0.22);
+  border-color: rgba(100,180,255,0.55);
+  color: rgba(190,225,255,0.98);
+}
+
+/* トースト */
+#toast {
+  position: fixed;
+  bottom: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 22px;
+  background: rgba(20,30,60,0.88);
+  color: rgba(220,235,255,0.95);
+  border: 1px solid rgba(180,210,255,0.3);
+  border-radius: 24px;
+  font-family: 'Zen Maru Gothic', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  box-shadow: 0 6px 24px rgba(40,80,160,0.4);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; }
+
 /* 戻るボタン */
 .back-btn {
   position: fixed;
@@ -154,7 +213,14 @@ h1 {
   <button id="star-btn">⭐ ほし</button>
 </div>
 
+<div id="controls">
+  <button class="ctl-btn" id="bgm-btn">🎵 おふ</button>
+  <button class="ctl-btn" id="awake-btn">🔆 しばらく見る</button>
+</div>
+
 <button id="permission-btn">❄️ センサーをつかう</button>
+
+<div id="toast"></div>
 
 <a class="back-btn" href="./index.html">← もどる</a>
 
@@ -788,6 +854,125 @@ starBtn.addEventListener('click', () => {
   particleMode = particleMode === 'snow' ? 'star' : 'snow';
   starBtn.classList.toggle('active', particleMode === 'star');
   starBtn.textContent = particleMode === 'star' ? '❄️ ゆき' : '⭐ ほし';
+});
+
+// ===== トースト =====
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===== BGM =====
+const BGM_TRACKS = [
+  null,
+  { name: '宇宙', src: './seishishitauchu.mp3' },
+  { name: '夢',   src: './tenshinoyume.mp3' },
+  { name: '星',   src: './yuubenohoshi.mp3' }
+];
+let bgmIndex = 0;
+let bgmAudio = null;
+const bgmBtn = document.getElementById('bgm-btn');
+bgmBtn.addEventListener('click', () => {
+  bgmIndex = (bgmIndex + 1) % BGM_TRACKS.length;
+  if (bgmAudio) { bgmAudio.pause(); bgmAudio.src = ''; bgmAudio = null; }
+  const track = BGM_TRACKS[bgmIndex];
+  if (track) {
+    bgmAudio = new Audio(track.src);
+    bgmAudio.loop = true;
+    bgmAudio.volume = 0.4;
+    bgmAudio.play().catch(() => showToast('再生できなかった'));
+    bgmBtn.textContent = `🎵 ${track.name}`;
+    bgmBtn.classList.add('active');
+  } else {
+    bgmBtn.textContent = '🎵 おふ';
+    bgmBtn.classList.remove('active');
+  }
+});
+
+// ===== スリープ回避（Screen Wake Lock） =====
+const AWAKE_MS = 15 * 60 * 1000;
+let wakeLock = null;
+let awakeUntil = 0;
+let awakeTicker = null;
+let lastDisplayedMin = -1;
+const awakeBtn = document.getElementById('awake-btn');
+
+async function acquireWakeLock() {
+  if (!('wakeLock' in navigator)) return false;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+}
+
+function renderAwakeBtn() {
+  if (awakeUntil) {
+    const remMin = Math.max(0, Math.ceil((awakeUntil - Date.now()) / 60000));
+    if (remMin !== lastDisplayedMin) {
+      awakeBtn.textContent = `🔆 あと${remMin}分`;
+      lastDisplayedMin = remMin;
+    }
+  } else {
+    awakeBtn.textContent = '🔆 しばらく見る';
+    lastDisplayedMin = -1;
+  }
+}
+
+async function startAwake() {
+  if (!('wakeLock' in navigator)) {
+    showToast('この端末では非対応だよ');
+    return;
+  }
+  const ok = await acquireWakeLock();
+  if (!ok) {
+    showToast('スリープ回避できなかった');
+    return;
+  }
+  awakeUntil = Date.now() + AWAKE_MS;
+  awakeBtn.classList.add('active');
+  renderAwakeBtn();
+  showToast('15分 表示しつづけます');
+  if (awakeTicker) clearInterval(awakeTicker);
+  awakeTicker = setInterval(() => {
+    if (Date.now() >= awakeUntil) { stopAwake('15分経過したよ'); return; }
+    renderAwakeBtn();
+  }, 1000);
+}
+
+function stopAwake(reason) {
+  releaseWakeLock();
+  awakeUntil = 0;
+  if (awakeTicker) { clearInterval(awakeTicker); awakeTicker = null; }
+  awakeBtn.classList.remove('active');
+  renderAwakeBtn();
+  if (reason) showToast(reason);
+}
+
+awakeBtn.addEventListener('click', () => {
+  if (awakeUntil) stopAwake('スリープ回避を解除');
+  else startAwake();
+});
+
+// タブが非表示になると OS が wake lock を勝手に解除するので、戻ってきたら再取得
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && awakeUntil) {
+    if (Date.now() >= awakeUntil) {
+      stopAwake();
+    } else if (!wakeLock) {
+      await acquireWakeLock();
+    }
+  }
 });
 
 // Service Worker 登録（PWA）

@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const CACHE_STATIC = `snowdome-static-${CACHE_VERSION}`;
 const CACHE_FONTS = `snowdome-fonts-${CACHE_VERSION}`;
 
@@ -45,6 +45,9 @@ function isHtmlLike(req) {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
+
+  // 音声/動画はブラウザに任せる（Range リクエストやストリーミングをSWで扱うと壊れやすい）
+  if (req.destination === 'audio' || req.destination === 'video') return;
 
   const url = new URL(req.url);
 
