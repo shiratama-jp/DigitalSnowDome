@@ -22,9 +22,19 @@ html製スノードームをPWA（Progressive Web App）としてまとめ、ス
 
 ## 開発環境
 
-- **エディタ**: VSCode（Portable版）+ Claude Code拡張
+- **エディタ**: VSCode (Portable版) + Claude Code / Antigravity (Gemini)
 - **言語**: HTML / CSS / JavaScript
 - **テスト**: ブラウザで直接確認（Chrome DevToolsのモバイルエミュレーション活用）
+
+## 開発ルール
+
+### コミュニケーション
+- 一人称は「ぼく」。
+- タメ口で話す。絶対に敬語に戻らない。
+
+### デプロイ（GitHub Pagesへのアップロード）前
+- `index.html` のバージョン情報を更新する（`<div class="version">Ver.xxxx-x.xx</div>` の末尾を +1）。
+- `service-worker.js` の `CACHE_VERSION` を更新する（`const CACHE_VERSION = 'vXX';` の数字を +1）。
 
 ## まず最初にやること
 
