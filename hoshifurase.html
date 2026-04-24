@@ -118,11 +118,28 @@ const SIZE = 400;
 canvas.width = SIZE; canvas.height = SIZE;
 const CX = SIZE / 2, CY = SIZE / 2, RADIUS = SIZE / 2 - 4;
 
-// 月の位置
-const MOON_X = 300, MOON_Y = 70;
+// 月（外周円弧に沿って ゆっくり 行ったり来たり）
+const MOON_X_INIT = 300, MOON_Y_INIT = 70;
+const MOON_ORBIT_R = Math.sqrt((MOON_X_INIT - CX) * (MOON_X_INIT - CX) + (MOON_Y_INIT - CY) * (MOON_Y_INIT - CY));
+const MOON_BASE_THETA = Math.atan2(MOON_Y_INIT - CY, MOON_X_INIT - CX);
+const MOON_AMP = Math.PI / 18;      // ±10° の振幅
+const MOON_PERIOD_MS = 26000;        // 26秒で1往復
+let MOON_X = MOON_X_INIT, MOON_Y = MOON_Y_INIT;
+
+function updateMoonOrbit() {
+  const t = Date.now() / MOON_PERIOD_MS * Math.PI * 2;
+  const theta = MOON_BASE_THETA + Math.sin(t) * MOON_AMP;
+  MOON_X = CX + Math.cos(theta) * MOON_ORBIT_R;
+  MOON_Y = CY + Math.sin(theta) * MOON_ORBIT_R;
+}
 
 // 地面のY座標
 const GROUND_Y = CY + RADIUS * 0.48;
+
+// 夜空に星が留まる範囲（上端は月の下限あたり、下端はドーム中央のやや上）
+const SKY_TOP = 92;
+const SKY_BOTTOM = 175;
+const FIX_PROB = 0.028;  // 夜空内で停止する1フレームあたり確率
 
 // 雪パーティクル
 const SNOW_COUNT = 200;
@@ -171,29 +188,24 @@ function createSnowflake(settled) {
 }
 
 // ===== 星 =====
-// 手動（振り振り・スワイプ）でも呼ぶので starMode ガードは外す。
-// ただし「天井に固定」する挙動は starMode が ON のときだけに限る。
+// すべての星は「ふんわり落ちる」で統一。starMode 時は夜空エリア通過中に
+// 確率で停止して夜空に留まる。moving_to_fix の「シュッ」は廃止。
 function spawnStar(atX, atY) {
-  const canFix = starMode && fixedStarCount < MAX_FIXED_STARS;
-  // ドーム内のランダムな目標位置（月の少し下～地面手前まで）
-  const targetX = CX + (Math.random() - 0.5) * RADIUS * 1.2;
-  const targetY = MOON_Y + 20 + Math.random() * (GROUND_Y - MOON_Y - 60);
-
   stars.push({
-    x: atX !== undefined ? atX : MOON_X, // 指定があればその位置、なければ月から
+    x: atX !== undefined ? atX : MOON_X,
     y: atY !== undefined ? atY : MOON_Y,
-    vx: (Math.random() - 0.5) * 2,
-    vy: 0.5 + Math.random() * 1.5,
+    // ふんわり初速（さくらと同じ調子）
+    vx: (Math.random() - 0.5) * 1.4,
+    vy: -0.2 + Math.random() * 0.6,
     size: 2.5 + Math.random() * 3,
     depth: 0.4 + Math.random() * 0.6,
     opacity: 0.6 + Math.random() * 0.4,
     shimmer: Math.random() * Math.PI * 2,
     shimmerSpeed: 0.03 + Math.random() * 0.03,
-    state: canFix ? 'moving_to_fix' : 'falling', // 'moving_to_fix' | 'fixed' | 'falling' | 'landed'
-    targetX, targetY,
-    fixTimer: 0
+    state: 'falling',
+    // 地面の着地位置（さくらと同じ深さバラつき）
+    landingY: GROUND_Y + 2 + Math.random() * 55
   });
-  if (canFix) fixedStarCount++;
 }
 
 function startStarSpawn() {
@@ -214,10 +226,11 @@ function stopStarSpawn() {
 const FLOWER_COLORS = ['#ff6b9d','#ff9f43','#ffcc44','#88eeff','#cc88ff','#ff88aa','#66ddaa'];
 
 function spawnFlower(x, y) {
+  // 着地位置のyをそのまま使う（草原の奥行き全体に花畑ができる）
   flowers.push({
-    x, y: Math.min(y, GROUND_Y + 5), // 地面に合わせる
+    x, y,
     size: 0, maxSize: 6 + Math.random() * 6,
-    phase: 0, // 0=growing, 1=bloomed, 2=fading
+    phase: 0,
     bloomTime: 0, bloomDuration: 3000 + Math.random() * 3000,
     color: FLOWER_COLORS[Math.floor(Math.random() * FLOWER_COLORS.length)],
     petals: 5 + Math.floor(Math.random() * 3),
@@ -251,11 +264,12 @@ function enableMotion() {
     motionBaseline = motionBaseline * 0.98 + force * 0.02;
     const net = force - motionBaseline;
     if (net > 2) shakeForce = Math.min(shakeForce + net * 0.6, 22);
-    // 強めの振動で星を降らせる（100ms毎に最大1個）
+    // 強めの振動で星を降らせる（100ms毎に 1〜2個。+30% ブースト）
     if (net > 5) {
       const now = Date.now();
       if (now - lastShakeSpawn > 100) {
-        spawnStar();
+        const n = 1 + (Math.random() < 0.3 ? 1 : 0);
+        for (let i = 0; i < n; i++) spawnStar();
         lastShakeSpawn = now;
       }
     }
@@ -535,41 +549,40 @@ function update() {
     }
   }
 
-  // 星の更新
+  // 星の更新（すべて「ふんわり」で統一。夜空エリアを通過中に確率で停止）
   for (const st of stars) {
     st.shimmer += st.shimmerSpeed;
 
-    if (st.state === 'moving_to_fix') {
-      // ターゲットに向かって移動
-      const dx = st.targetX - st.x, dy = st.targetY - st.y;
-      const d = Math.sqrt(dx*dx + dy*dy);
-      if (d > 3) {
-        st.vx += dx * 0.008; st.vy += dy * 0.008;
-        st.vx *= 0.96; st.vy *= 0.96;
-        st.x += st.vx; st.y += st.vy;
-      } else {
-        st.state = 'fixed';
-        st.vx = 0; st.vy = 0;
-      }
-    } else if (st.state === 'fixed') {
-      // 空に留まってゆらゆら
+    if (st.state === 'fixed') {
+      // 夜空にとどまって微かにゆらゆら
       st.x += Math.sin(Date.now() * 0.0008 + st.shimmer) * 0.15;
       st.y += Math.cos(Date.now() * 0.001 + st.shimmer * 1.3) * 0.1;
     } else if (st.state === 'falling') {
-      // 重力で落ちる
-      st.vy += 0.03 * st.depth;
-      st.vx += tiltX * 0.05;
+      // ふんわり重力
+      st.vy += 0.022 * st.depth;
+      st.vx += tiltX * 0.05 * st.depth;
+      st.vy += tiltY * 0.025 * st.depth;
       st.vx *= 0.99; st.vy *= 0.99;
-      st.vx += Math.sin(Date.now() * 0.001 + st.shimmer) * 0.01;
+      st.vx += Math.sin(Date.now() * 0.001 + st.shimmer) * 0.015;
       st.x += st.vx; st.y += st.vy;
 
-      // 地面判定
-      if (st.y > GROUND_Y - 2) {
-        st.state = 'landed';
-        spawnFlower(st.x, GROUND_Y);
+      // 夜空エリアを通過中に確率で停止（starMode時・上限内のみ）
+      if (starMode
+          && fixedStarCount < MAX_FIXED_STARS
+          && st.y > SKY_TOP && st.y < SKY_BOTTOM
+          && Math.random() < FIX_PROB) {
+        st.state = 'fixed';
+        st.vx = 0; st.vy = 0;
+        fixedStarCount++;
       }
 
-      // ドーム内
+      // 地面に着地（さくら同様、粒子ごとにバラついた深さ）
+      if (st.y > st.landingY) {
+        st.state = 'landed';
+        spawnFlower(st.x, st.landingY);
+      }
+
+      // ドームの壁（跳ね返り）
       const dx = st.x - CX, dy = st.y - CY, dist = Math.sqrt(dx*dx + dy*dy);
       if (dist > RADIUS - st.size - 2) {
         const ang = Math.atan2(dy, dx);
@@ -621,6 +634,7 @@ function drawShootingStars() {
 }
 
 function render() {
+  updateMoonOrbit();
   update();
   maybeSpawnShootingStar();
   updateShootingStars();
@@ -687,11 +701,12 @@ starBtn.addEventListener('click', () => {
     stopStarSpawn();
     // 固定されてる星を落とす
     for (const st of stars) {
-      if (st.state === 'fixed' || st.state === 'moving_to_fix') {
+      if (st.state === 'fixed') {
         st.state = 'falling';
-        st.vy = 0.5 + Math.random();
+        st.vy = 0.2 + Math.random() * 0.4; // ふんわり落下に合わせる
       }
     }
+    fixedStarCount = 0;
   }
 });
 
