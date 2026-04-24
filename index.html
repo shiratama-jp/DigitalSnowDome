@@ -114,6 +114,18 @@ h1 {
   box-shadow: 0 12px 32px rgba(150,110,230,0.4),
               inset 0 0 24px rgba(210,190,255,0.12);
 }
+.menu-btn.sakura {
+  background: linear-gradient(135deg, rgba(200,110,150,0.65), rgba(120,50,90,0.6));
+  border: 1px solid rgba(255,200,220,0.35);
+  color: rgba(255,230,240,0.98);
+  box-shadow: 0 8px 28px rgba(200,100,150,0.28),
+              inset 0 0 24px rgba(255,200,220,0.08);
+}
+.menu-btn.sakura:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(230,140,180,0.4),
+              inset 0 0 24px rgba(255,200,220,0.12);
+}
 
 /* インストール案内 */
 #install-banner {
@@ -193,6 +205,10 @@ h1 {
     <span class="emoji">🌟</span>
     <span>ほしふらせ</span>
   </a>
+  <a class="menu-btn sakura" href="./sakura-itsudemo.html">
+    <span class="emoji">🌸</span>
+    <span>さくら　いつでも</span>
+  </a>
   <a class="menu-btn nyarm" href="./snow-nyarm.html">
     <span class="emoji">🐱</span>
     <span>スノーニャーム</span>
@@ -204,7 +220,7 @@ h1 {
   <div id="install-content"></div>
 </div>
 
-<div class="version">Ver.260424-1.06</div>
+<div class="version">Ver.260424-1.07</div>
 
 <script>
 // ===== インストール案内 =====
