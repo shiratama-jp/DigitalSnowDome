@@ -96,6 +96,7 @@ h1 { font-size: clamp(16px, 4.5vw, 20px); font-weight: 900; color: rgba(255,200,
 <div id="base">
   <div id="clock">00:00</div>
   <button class="base-btn" id="auto-btn">🌸 まく</button>
+  <button class="base-btn" id="burst-btn">🌸 いっぱい</button>
 </div>
 
 <div id="controls">
@@ -687,6 +688,15 @@ autoBtn.addEventListener('click', () => {
   autoSpawn = !autoSpawn;
   autoBtn.classList.toggle('active', autoSpawn);
   if (autoSpawn) startAutoSpawn(); else stopAutoSpawn();
+});
+
+// どーんと一気にまく（バックグラウンド復帰時の「ぶわ～」を再現）
+const burstBtn = document.getElementById('burst-btn');
+burstBtn.addEventListener('click', () => {
+  for (let i = 0; i < 100; i++) spawnBlossom();
+  // 既に宙にあるやつにも乱流をかけて一緒に舞い落ちさせる
+  shakeForce = Math.min(shakeForce + 10, 22);
+  if (navigator.vibrate) { try { navigator.vibrate(60); } catch(e) {} }
 });
 
 // ===== トースト =====
