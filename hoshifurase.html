@@ -810,6 +810,15 @@ document.addEventListener('visibilitychange', async () => {
   }
 });
 
+// 戻るボタン：履歴に index.html を積まず history.back() で戻る
+// （メニューに居るときに Android ◀ を押すと PWA が終了するように）
+document.querySelector('.back-btn').addEventListener('click', (e) => {
+  if (history.length > 1) {
+    e.preventDefault();
+    history.back();
+  }
+});
+
 // ===== Service Worker 登録（PWA） =====
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
