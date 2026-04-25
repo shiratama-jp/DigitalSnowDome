@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v21';
+const CACHE_VERSION = 'v22';
 const CACHE_STATIC = `snowdome-static-${CACHE_VERSION}`;
 const CACHE_FONTS = `snowdome-fonts-${CACHE_VERSION}`;
 
