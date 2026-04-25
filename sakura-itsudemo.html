@@ -1,825 +1,956 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0a1628">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Snow Domes">
-<meta name="mobile-web-app-capable" content="yes">
-<title>さくら いつでも</title>
-<link rel="manifest" href="./manifest.json">
-<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
-<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
-<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-  font-family: 'Zen Maru Gothic', sans-serif;
-  background: #28202a;
-  min-height: 100vh; min-height: 100dvh;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  overflow: hidden; touch-action: none; user-select: none;
-}
-h1 { font-size: clamp(16px, 4.5vw, 20px); font-weight: 900; color: rgba(255,200,220,0.8); letter-spacing: 2px; margin-bottom: 8px; }
-#dome-wrap { position: relative; width: min(90vw, 380px); height: min(90vw, 380px); }
-#dome-canvas { width: 100%; height: 100%; border-radius: 50%;
-  box-shadow: 0 0 40px rgba(255,180,200,0.18), 0 0 80px rgba(255,180,200,0.08), inset 0 0 30px rgba(255,230,240,0.06);
-}
-#base {
-  width: min(78vw, 340px);
-  background: linear-gradient(180deg, #8a6a40, #6a4a28, #5a3a18);
-  border-radius: 0 0 20px 20px; margin: -6px auto 0;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.4); position: relative;
-  padding: 10px 14px 12px; display: flex; align-items: center; gap: 6px;
-}
-#clock { margin-right: auto; font-family: 'Zen Maru Gothic', sans-serif;
-  font-size: clamp(16px, 4.5vw, 22px); font-weight: 900;
-  color: rgba(255,230,180,0.85); letter-spacing: 2px; text-shadow: 0 1px 4px rgba(0,0,0,0.4);
-}
-#base::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 3px;
-  background: linear-gradient(90deg, transparent, rgba(255,220,150,0.3), transparent); border-radius: 2px;
-}
-.base-btn {
-  font-family: 'Zen Maru Gothic', sans-serif; font-size: clamp(11px, 3vw, 13px); font-weight: 700;
-  padding: 6px 12px; border-radius: 20px; border: 1.5px solid rgba(255,220,150,0.3);
-  background: rgba(255,255,255,0.08); color: rgba(255,230,180,0.7); cursor: pointer;
-  transition: all 0.2s; letter-spacing: 0.5px; white-space: nowrap;
-}
-.base-btn:hover { background: rgba(255,255,255,0.15); }
-.base-btn.active { background: rgba(255,150,190,0.22); border-color: rgba(255,150,190,0.55); color: rgba(255,210,225,0.98); }
-#permission-btn { display: none; margin-top: 16px; padding: 12px 28px;
-  font-family: 'Zen Maru Gothic', sans-serif; font-size: 14px; font-weight: 900;
-  border: 2px solid rgba(255,200,220,0.3); border-radius: 60px;
-  background: rgba(255,180,200,0.15); color: rgba(255,220,235,0.8); cursor: pointer;
-}
-#controls {
-  display: flex; gap: 8px; margin-top: 14px; justify-content: center;
-  flex-wrap: wrap; max-width: min(88vw, 360px);
-}
-.ctl-btn {
-  font-family: 'Zen Maru Gothic', sans-serif; font-size: clamp(11px, 3vw, 13px); font-weight: 700;
-  padding: 7px 14px; border-radius: 20px; border: 1.5px solid rgba(255,200,220,0.22);
-  background: rgba(60,30,50,0.5); color: rgba(255,220,235,0.75); cursor: pointer;
-  transition: all 0.2s; letter-spacing: 0.5px; white-space: nowrap;
-  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-}
-.ctl-btn:hover { background: rgba(90,50,75,0.7); color: rgba(255,235,245,0.95); }
-.ctl-btn.active { background: rgba(255,150,190,0.22); border-color: rgba(255,150,190,0.55); color: rgba(255,210,225,0.98); }
-#toast {
-  position: fixed; bottom: 56px; left: 50%; transform: translateX(-50%);
-  padding: 10px 22px; background: rgba(40,20,35,0.88); color: rgba(255,230,240,0.95);
-  border: 1px solid rgba(255,180,210,0.3); border-radius: 24px;
-  font-family: 'Zen Maru Gothic', sans-serif; font-size: 13px; font-weight: 700;
-  letter-spacing: 1px; box-shadow: 0 6px 24px rgba(180,80,120,0.35);
-  z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; white-space: nowrap;
-}
-#toast.show { opacity: 1; }
-.back-btn {
-  position: fixed; bottom: 10px; left: 10px;
-  padding: 6px 14px; font-family: 'Zen Maru Gothic', sans-serif;
-  font-size: 12px; font-weight: 700; letter-spacing: 1px;
-  border: 1px solid rgba(255,200,220,0.22); border-radius: 60px;
-  background: rgba(60,30,50,0.55); color: rgba(255,220,235,0.75);
-  text-decoration: none; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-  z-index: 100; transition: background 0.15s, color 0.15s;
-}
-.back-btn:hover { background: rgba(90,50,75,0.7); color: rgba(255,235,245,0.95); }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a1628">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Snow Domes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>さくら ふぶいて</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      background: #28202a;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+    }
+
+    h1 {
+      font-size: clamp(16px, 4.5vw, 20px);
+      font-weight: 900;
+      color: rgba(255, 200, 220, 0.8);
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    #dome-wrap {
+      position: relative;
+      width: min(90vw, 380px);
+      height: min(90vw, 380px);
+    }
+
+    #dome-canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      box-shadow: 0 0 40px rgba(255, 180, 200, 0.18), 0 0 80px rgba(255, 180, 200, 0.08), inset 0 0 30px rgba(255, 230, 240, 0.06);
+    }
+
+    #base {
+      width: min(78vw, 340px);
+      background: linear-gradient(180deg, #8a6a40, #6a4a28, #5a3a18);
+      border-radius: 0 0 20px 20px;
+      margin: -6px auto 0;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+      position: relative;
+      padding: 10px 14px 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #clock {
+      margin-right: auto;
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: clamp(16px, 4.5vw, 22px);
+      font-weight: 900;
+      color: rgba(255, 230, 180, 0.85);
+      letter-spacing: 2px;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    #base::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 10%;
+      right: 10%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(255, 220, 150, 0.3), transparent);
+      border-radius: 2px;
+    }
+
+    .base-btn {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: clamp(11px, 3vw, 13px);
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1.5px solid rgba(255, 220, 150, 0.3);
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 230, 180, 0.7);
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .base-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .base-btn.active {
+      background: rgba(255, 150, 190, 0.22);
+      border-color: rgba(255, 150, 190, 0.55);
+      color: rgba(255, 210, 225, 0.98);
+    }
+
+    #permission-btn {
+      display: none;
+      margin-top: 16px;
+      padding: 12px 28px;
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: 14px;
+      font-weight: 900;
+      border: 2px solid rgba(255, 200, 220, 0.3);
+      border-radius: 60px;
+      background: rgba(255, 180, 200, 0.15);
+      color: rgba(255, 220, 235, 0.8);
+      cursor: pointer;
+    }
+
+    #controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      max-width: min(88vw, 360px);
+    }
+
+    .ctl-btn {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: clamp(11px, 3vw, 13px);
+      font-weight: 700;
+      padding: 7px 14px;
+      border-radius: 20px;
+      border: 1.5px solid rgba(255, 200, 220, 0.22);
+      background: rgba(60, 30, 50, 0.5);
+      color: rgba(255, 220, 235, 0.75);
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    .ctl-btn:hover {
+      background: rgba(90, 50, 75, 0.7);
+      color: rgba(255, 235, 245, 0.95);
+    }
+
+    .ctl-btn.active {
+      background: rgba(255, 150, 190, 0.22);
+      border-color: rgba(255, 150, 190, 0.55);
+      color: rgba(255, 210, 225, 0.98);
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 56px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 22px;
+      background: rgba(40, 20, 35, 0.88);
+      color: rgba(255, 230, 240, 0.95);
+      border: 1px solid rgba(255, 180, 210, 0.3);
+      border-radius: 24px;
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      box-shadow: 0 6px 24px rgba(180, 80, 120, 0.35);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      white-space: nowrap;
+    }
+
+    #toast.show {
+      opacity: 1;
+    }
+
+    .back-btn {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      padding: 6px 14px;
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      border: 1px solid rgba(255, 200, 220, 0.22);
+      border-radius: 60px;
+      background: rgba(60, 30, 50, 0.55);
+      color: rgba(255, 220, 235, 0.75);
+      text-decoration: none;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 100;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .back-btn:hover {
+      background: rgba(90, 50, 75, 0.7);
+      color: rgba(255, 235, 245, 0.95);
+    }
+  </style>
 </head>
+
 <body>
-<h1>🌸 さくら　いつでも 🌸</h1>
-<div id="dome-wrap"><canvas id="dome-canvas"></canvas></div>
-<div id="base">
-  <div id="clock">00:00</div>
-  <button class="base-btn" id="auto-btn">🌸 まく</button>
-  <button class="base-btn" id="burst-btn">🌸 いっぱい</button>
-</div>
+  <h1>🌸 さくら　ふぶいて 🌸</h1>
+  <div id="dome-wrap"><canvas id="dome-canvas"></canvas></div>
+  <div id="base">
+    <div id="clock">00:00</div>
+    <button class="base-btn" id="auto-btn">🌸 ちらす</button>
+    <button class="base-btn" id="burst-btn">🌸 いっぱい</button>
+  </div>
 
-<div id="controls">
-  <button class="ctl-btn" id="bgm-btn">🎵 おふ</button>
-  <button class="ctl-btn" id="awake-btn">🔆 しばらく見る</button>
-</div>
+  <div id="controls">
+    <button class="ctl-btn" id="bgm-btn">🎵 おふ</button>
+    <button class="ctl-btn" id="awake-btn">🔆 しばらく見る</button>
+  </div>
 
-<button id="permission-btn">🌸 センサーをつかう</button>
-<div id="toast"></div>
+  <button id="permission-btn">🌸 センサーをつかう</button>
+  <div id="toast"></div>
 
-<a class="back-btn" href="./index.html">← もどる</a>
+  <a class="back-btn" href="./index.html">← もどる</a>
 
-<script>
-const canvas = document.getElementById('dome-canvas');
-const ctx = canvas.getContext('2d');
-const SIZE = 400;
-canvas.width = SIZE; canvas.height = SIZE;
-const CX = SIZE / 2, CY = SIZE / 2, RADIUS = SIZE / 2 - 4;
+  <script>
+    const canvas = document.getElementById('dome-canvas');
+    const ctx = canvas.getContext('2d');
+    const SIZE = 400;
+    canvas.width = SIZE; canvas.height = SIZE;
+    const CX = SIZE / 2, CY = SIZE / 2, RADIUS = SIZE / 2 - 4;
 
-// 太陽の位置（装飾のみ、花の出現元ではない）
-const SUN_X = 310, SUN_Y = 62;
-// 地面Y
-const GROUND_Y = CY + RADIUS * 0.48;
-// 桜の木の位置と葉群（幹の根元を地面に）
-const TREE_X = CX, TREE_BASE_Y = GROUND_Y - 2;
-const TREE_CANOPY = [
-  { cx: TREE_X,      cy: TREE_BASE_Y - 105, r: 46 },
-  { cx: TREE_X - 34, cy: TREE_BASE_Y - 90,  r: 34 },
-  { cx: TREE_X + 34, cy: TREE_BASE_Y - 92,  r: 34 },
-  { cx: TREE_X - 22, cy: TREE_BASE_Y - 120, r: 28 },
-  { cx: TREE_X + 22, cy: TREE_BASE_Y - 122, r: 28 },
-  { cx: TREE_X,      cy: TREE_BASE_Y - 138, r: 26 },
-  { cx: TREE_X - 42, cy: TREE_BASE_Y - 75,  r: 22 },
-  { cx: TREE_X + 44, cy: TREE_BASE_Y - 76,  r: 22 }
-];
+    // 太陽の位置（装飾のみ、花の出現元ではない）
+    const SUN_X = 310, SUN_Y = 62;
+    // 地面Y
+    const GROUND_Y = CY + RADIUS * 0.48;
+    // 桜の木の位置と葉群（幹の根元を地面に）
+    const TREE_X = CX, TREE_BASE_Y = GROUND_Y - 2;
+    const TREE_CANOPY = [
+      { cx: TREE_X, cy: TREE_BASE_Y - 105, r: 46 },
+      { cx: TREE_X - 34, cy: TREE_BASE_Y - 90, r: 34 },
+      { cx: TREE_X + 34, cy: TREE_BASE_Y - 92, r: 34 },
+      { cx: TREE_X - 22, cy: TREE_BASE_Y - 120, r: 28 },
+      { cx: TREE_X + 22, cy: TREE_BASE_Y - 122, r: 28 },
+      { cx: TREE_X, cy: TREE_BASE_Y - 138, r: 26 },
+      { cx: TREE_X - 42, cy: TREE_BASE_Y - 75, r: 22 },
+      { cx: TREE_X + 44, cy: TREE_BASE_Y - 76, r: 22 }
+    ];
 
-// 花びら（さくら粒子）
-const blossoms = [];
-const MAX_BLOSSOMS = 420;  // 初期に木を埋めるぶん + 散る分の余裕
-const INITIAL_TREE_BLOSSOMS = 120;  // 最初から木に付いてる数
-const BLOSSOM_COLORS = ['#ffc8d8', '#ffb4c8', '#f8c8dc', '#ffa8c0', '#ffe0ea'];
+    // 花びら（さくら粒子）
+    const blossoms = [];
+    const MAX_BLOSSOMS = 420;  // 初期に木を埋めるぶん + 散る分の余裕
+    const INITIAL_TREE_BLOSSOMS = 120;  // 最初から木に付いてる数
+    const BLOSSOM_COLORS = ['#ffc8d8', '#ffb4c8', '#f8c8dc', '#ffa8c0', '#ffe0ea'];
 
-// 動物（芝生で遊ぶ）
-const pets = [
-  { emoji: '🐕', x: CX - 55, vx: 0.3, nextTurn: 0, phase: 0 },
-  { emoji: '🐈', x: CX + 55, vx: -0.25, nextTurn: 0, phase: 1.7 }
-];
+    // 動物（芝生で遊ぶ）
+    const pets = [
+      { emoji: '🐕', x: CX - 55, vx: 0.3, nextTurn: 0, phase: 0 },
+      { emoji: '🐈', x: CX + 55, vx: -0.25, nextTurn: 0, phase: 1.7 }
+    ];
 
-// 地面の花
-const flowers = [];
-const FLOWER_COLORS = ['#ff6b9d','#ff9f43','#ffcc44','#88eeff','#cc88ff','#ff88aa','#66ddaa','#ff5577'];
+    // 地面の花
+    const flowers = [];
+    const FLOWER_COLORS = ['#ff6b9d', '#ff9f43', '#ffcc44', '#88eeff', '#cc88ff', '#ff88aa', '#66ddaa', '#ff5577'];
 
-// 操作状態
-let tiltX = 0, tiltY = 0;
-let shakeForce = 0;
-let lastAccel = { x: 0, y: 0, z: 0 };
-let motionBaseline = 0;
-let sensorReady = false;
-let autoSpawn = false;
-let autoTimer = null;
+    // 操作状態
+    let tiltX = 0, tiltY = 0;
+    let shakeForce = 0;
+    let lastAccel = { x: 0, y: 0, z: 0 };
+    let motionBaseline = 0;
+    let sensorReady = false;
+    let autoSpawn = false;
+    let autoTimer = null;
 
-// ===== 花びらスポーン =====
-// 木の葉群からランダムな点を取る
-function pickTreeCanopyPoint() {
-  const c = TREE_CANOPY[Math.floor(Math.random() * TREE_CANOPY.length)];
-  const r = Math.sqrt(Math.random()) * c.r * 0.92;
-  const a = Math.random() * Math.PI * 2;
-  return { x: c.cx + Math.cos(a) * r, y: c.cy + Math.sin(a) * r };
-}
+    // ===== 花びらスポーン =====
+    // 木の葉群からランダムな点を取る
+    function pickTreeCanopyPoint() {
+      const c = TREE_CANOPY[Math.floor(Math.random() * TREE_CANOPY.length)];
+      const r = Math.sqrt(Math.random()) * c.r * 0.92;
+      const a = Math.random() * Math.PI * 2;
+      return { x: c.cx + Math.cos(a) * r, y: c.cy + Math.sin(a) * r };
+    }
 
-function makeBlossom(x, y, state, isOriginal) {
-  return {
-    x, y,
-    vx: 0, vy: 0,
-    size: 4.5 + Math.random() * 4,
-    depth: 0.45 + Math.random() * 0.55,
-    rotation: Math.random() * Math.PI * 2,
-    rotSpeed: (Math.random() - 0.5) * 0.05,
-    opacity: 0.75 + Math.random() * 0.25,
-    color: BLOSSOM_COLORS[Math.floor(Math.random() * BLOSSOM_COLORS.length)],
-    state, // 'falling' | 'on_tree' | 'landed'
-    age: 0,
-    isOriginal: !!isOriginal,
-    escapedTree: false,
-    // 着地目標Y：地面の上端から 55px 下までランダム → 花畑が奥行きを持つ
-    landingY: GROUND_Y + 2 + Math.random() * 55
-  };
-}
+    function makeBlossom(x, y, state, isOriginal) {
+      return {
+        x, y,
+        vx: 0, vy: 0,
+        size: 4.5 + Math.random() * 4,
+        depth: 0.45 + Math.random() * 0.55,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.05,
+        opacity: 0.75 + Math.random() * 0.25,
+        color: BLOSSOM_COLORS[Math.floor(Math.random() * BLOSSOM_COLORS.length)],
+        state, // 'falling' | 'on_tree' | 'landed'
+        age: 0,
+        isOriginal: !!isOriginal,
+        escapedTree: false,
+        // 着地目標Y：地面の上端から 55px 下までランダム → 花畑が奥行きを持つ
+        landingY: GROUND_Y + 2 + Math.random() * 55
+      };
+    }
 
-// 木に初期の花をたくさん貼り付ける
-function populateTree(count) {
-  for (let i = 0; i < count; i++) {
-    const p = pickTreeCanopyPoint();
-    blossoms.push(makeBlossom(p.x, p.y, 'on_tree', true));
-  }
-}
+    // 木に初期の花をたくさん貼り付ける
+    function populateTree(count) {
+      for (let i = 0; i < count; i++) {
+        const p = pickTreeCanopyPoint();
+        blossoms.push(makeBlossom(p.x, p.y, 'on_tree', true));
+      }
+    }
 
-// 散る花を生成（atX/atY 指定があればそこから、なければ木からランダム）
-function spawnBlossom(atX, atY) {
-  // 上限超えたら「もとから木にあるヤツ」以外の最古を削除（元々のは減らさない）
-  if (blossoms.length >= MAX_BLOSSOMS) {
-    let idx = blossoms.findIndex(b => !b.isOriginal && b.state === 'on_tree');
-    if (idx < 0) idx = blossoms.findIndex(b => !b.isOriginal);
-    if (idx >= 0) blossoms.splice(idx, 1);
-  }
-  let sx, sy;
-  if (atX !== undefined) {
-    sx = atX; sy = atY;
-  } else {
-    const p = pickTreeCanopyPoint();
-    sx = p.x; sy = p.y;
-  }
-  const b = makeBlossom(sx, sy, 'falling', false);
-  // 木からふわりと散る：横に少し広がり、ほんのり落下方向
-  b.vx = (Math.random() - 0.5) * 1.6;
-  b.vy = -0.2 + Math.random() * 0.8;
-  blossoms.push(b);
-}
+    // 散る花を生成（atX/atY 指定があればそこから、なければ木からランダム）
+    function spawnBlossom(atX, atY) {
+      // 上限超えたら「もとから木にあるヤツ」以外の最古を削除（元々のは減らさない）
+      if (blossoms.length >= MAX_BLOSSOMS) {
+        let idx = blossoms.findIndex(b => !b.isOriginal && b.state === 'on_tree');
+        if (idx < 0) idx = blossoms.findIndex(b => !b.isOriginal);
+        if (idx >= 0) blossoms.splice(idx, 1);
+      }
+      let sx, sy;
+      if (atX !== undefined) {
+        sx = atX; sy = atY;
+      } else {
+        const p = pickTreeCanopyPoint();
+        sx = p.x; sy = p.y;
+      }
+      const b = makeBlossom(sx, sy, 'falling', false);
+      // 木からふわりと散る：横に少し広がり、ほんのり落下方向
+      b.vx = (Math.random() - 0.5) * 1.6;
+      b.vy = -0.2 + Math.random() * 0.8;
+      blossoms.push(b);
+    }
 
-function startAutoSpawn() {
-  if (autoTimer) return;
-  function tick() {
-    if (!autoSpawn) return;
-    const n = 1 + Math.floor(Math.random() * 2);
-    for (let i = 0; i < n; i++) spawnBlossom();
-    autoTimer = setTimeout(tick, 260 + Math.random() * 500);
-  }
-  tick();
-}
-function stopAutoSpawn() {
-  if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
-}
-
-// ===== 花（地面にも壁にも咲く） =====
-function spawnFlower(x, y) {
-  // 地面エリアなら茎あり草花、壁/空中なら茎なしの貼り付き花
-  const isGround = y > GROUND_Y - 8;
-  flowers.push({
-    x, y,
-    isGround,
-    size: 0, maxSize: 5 + Math.random() * 6,
-    phase: 0,
-    bloomTime: 0, bloomDuration: 6000 + Math.random() * 6000,
-    color: FLOWER_COLORS[Math.floor(Math.random() * FLOWER_COLORS.length)],
-    petals: 5 + Math.floor(Math.random() * 3),
-    life: 1
-  });
-}
-
-// ===== 木の葉群の当たり判定 =====
-function isInTreeCanopy(x, y) {
-  for (const c of TREE_CANOPY) {
-    const dx = x - c.cx, dy = y - c.cy;
-    if (dx*dx + dy*dy < c.r * c.r) return true;
-  }
-  return false;
-}
-
-// ===== センサー =====
-async function requestSensor() {
-  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    try { const p = await DeviceOrientationEvent.requestPermission(); if (p === 'granted') enableOrientation(); } catch(e) {}
-    try { const p = await DeviceMotionEvent.requestPermission(); if (p === 'granted') enableMotion(); } catch(e) {}
-    document.getElementById('permission-btn').style.display = 'none';
-  }
-}
-function enableOrientation() {
-  sensorReady = true;
-  window.addEventListener('deviceorientation', (e) => {
-    tiltX = Math.max(-1, Math.min(1, (e.gamma || 0) / 60));
-    tiltY = Math.max(-1, Math.min(1, ((e.beta || 90) - 90) / 60));
-  });
-}
-
-let lastShakeSpawn = 0;
-let lastSwipeSpawn = 0;
-
-function enableMotion() {
-  window.addEventListener('devicemotion', (e) => {
-    const a = e.accelerationIncludingGravity; if (!a) return;
-    const dx = a.x - lastAccel.x, dy = a.y - lastAccel.y, dz = a.z - lastAccel.z;
-    const force = Math.sqrt(dx*dx + dy*dy + dz*dz);
-    motionBaseline = motionBaseline * 0.98 + force * 0.02;
-    const net = force - motionBaseline;
-    if (net > 2) shakeForce = Math.min(shakeForce + net * 0.6, 22);
-    // 振るとさくらを複数撒く
-    if (net > 5) {
-      const now = Date.now();
-      if (now - lastShakeSpawn > 90) {
+    function startAutoSpawn() {
+      if (autoTimer) return;
+      function tick() {
+        if (!autoSpawn) return;
         const n = 1 + Math.floor(Math.random() * 2);
         for (let i = 0; i < n; i++) spawnBlossom();
-        lastShakeSpawn = now;
+        autoTimer = setTimeout(tick, 260 + Math.random() * 500);
+      }
+      tick();
+    }
+    function stopAutoSpawn() {
+      if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+    }
+
+    // ===== 花（地面にも壁にも咲く） =====
+    function spawnFlower(x, y) {
+      // 地面エリアなら茎あり草花、壁/空中なら茎なしの貼り付き花
+      const isGround = y > GROUND_Y - 8;
+      flowers.push({
+        x, y,
+        isGround,
+        size: 0, maxSize: 5 + Math.random() * 6,
+        phase: 0,
+        bloomTime: 0, bloomDuration: 6000 + Math.random() * 6000,
+        color: FLOWER_COLORS[Math.floor(Math.random() * FLOWER_COLORS.length)],
+        petals: 5 + Math.floor(Math.random() * 3),
+        life: 1
+      });
+    }
+
+    // ===== 木の葉群の当たり判定 =====
+    function isInTreeCanopy(x, y) {
+      for (const c of TREE_CANOPY) {
+        const dx = x - c.cx, dy = y - c.cy;
+        if (dx * dx + dy * dy < c.r * c.r) return true;
+      }
+      return false;
+    }
+
+    // ===== センサー =====
+    async function requestSensor() {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try { const p = await DeviceOrientationEvent.requestPermission(); if (p === 'granted') enableOrientation(); } catch (e) { }
+        try { const p = await DeviceMotionEvent.requestPermission(); if (p === 'granted') enableMotion(); } catch (e) { }
+        document.getElementById('permission-btn').style.display = 'none';
       }
     }
-    lastAccel = { x: a.x||0, y: a.y||0, z: a.z||0 };
-  });
-}
-function enableTouchFallback() {
-  let touching = false;
-  function maybeSpawnFromTree() {
-    const now = Date.now();
-    if (now - lastSwipeSpawn < 70) return;
-    const n = 1 + Math.floor(Math.random() * 2);
-    for (let i = 0; i < n; i++) spawnBlossom();
-    lastSwipeSpawn = now;
-  }
-  canvas.addEventListener('mousedown', () => { touching = true; maybeSpawnFromTree(); });
-  canvas.addEventListener('mouseup', () => { touching = false; tiltX = 0; tiltY = 0; });
-  canvas.addEventListener('mousemove', (e) => {
-    if (!touching) return;
-    const r = canvas.getBoundingClientRect();
-    tiltX = ((e.clientX - r.left) / r.width * 2 - 1) * 0.8;
-    tiltY = ((e.clientY - r.top) / r.height * 2 - 1) * 0.8;
-    maybeSpawnFromTree();
-  });
-  let lastTap = 0;
-  canvas.addEventListener('click', () => { const n = Date.now(); if (n - lastTap < 400) shakeForce = 16; lastTap = n; });
-  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); touching = true; ut(e); }, {passive:false});
-  canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (touching) ut(e); }, {passive:false});
-  canvas.addEventListener('touchend', () => { touching = false; tiltX = 0; tiltY = 0; });
-  function ut(e) {
-    const t = e.touches[0], r = canvas.getBoundingClientRect();
-    tiltX = ((t.clientX - r.left) / r.width * 2 - 1) * 0.8;
-    tiltY = ((t.clientY - r.top) / r.height * 2 - 1) * 0.8;
-    maybeSpawnFromTree();
-  }
-}
-function initSensor() {
-  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    document.getElementById('permission-btn').style.display = 'block';
-    document.getElementById('permission-btn').addEventListener('click', requestSensor);
-  } else if ('DeviceOrientationEvent' in window) {
-    enableOrientation(); if ('DeviceMotionEvent' in window) enableMotion();
-    setTimeout(() => { if (!sensorReady) enableTouchFallback(); }, 1500);
-  }
-  enableTouchFallback();
-}
-
-// ===== 描画 =====
-function drawBackground() {
-  ctx.save();
-  ctx.beginPath(); ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2); ctx.clip();
-
-  // 春の空（淡いピンク→クリーム→空色）
-  const sky = ctx.createLinearGradient(0, 0, 0, SIZE);
-  sky.addColorStop(0, '#ffd8e4');
-  sky.addColorStop(0.45, '#ffe8dc');
-  sky.addColorStop(0.75, '#d8ecf8');
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, SIZE, SIZE);
-
-  // 太陽
-  drawSun(SUN_X, SUN_Y);
-
-  // 雲（ゆっくり流れる）
-  ctx.fillStyle = 'rgba(255,255,255,0.75)';
-  const co = (Date.now() * 0.006) % (SIZE + 100) - 50;
-  ctx.beginPath(); ctx.ellipse(co, 48, 30, 12, 0, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(co - 16, 52, 20, 9, 0, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(co + 18, 52, 22, 10, 0, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
-  const co2 = ((Date.now() * 0.004) + 200) % (SIZE + 100) - 50;
-  ctx.beginPath(); ctx.ellipse(co2, 100, 24, 9, 0, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(co2 + 14, 102, 16, 7, 0, 0, Math.PI*2); ctx.fill();
-
-  // 草原
-  const grass = ctx.createLinearGradient(0, GROUND_Y - 10, 0, CY + RADIUS);
-  grass.addColorStop(0, '#88c070');
-  grass.addColorStop(0.5, '#6fa858');
-  grass.addColorStop(1, '#508a38');
-  ctx.fillStyle = grass;
-  ctx.beginPath();
-  ctx.moveTo(CX - RADIUS, GROUND_Y);
-  ctx.quadraticCurveTo(CX - RADIUS * 0.5, GROUND_Y - 6, CX, GROUND_Y - 2);
-  ctx.quadraticCurveTo(CX + RADIUS * 0.5, GROUND_Y + 6, CX + RADIUS, GROUND_Y);
-  ctx.lineTo(CX + RADIUS, CY + RADIUS);
-  ctx.arc(CX, CY, RADIUS, 0, Math.PI, false);
-  ctx.closePath();
-  ctx.fill();
-
-  // 草のゆらぎ
-  ctx.strokeStyle = 'rgba(80,160,60,0.35)';
-  ctx.lineWidth = 1.3;
-  for (let i = 0; i < 18; i++) {
-    const gx = CX - RADIUS * 0.75 + (RADIUS * 1.5 / 18) * i + Math.sin(i * 5) * 5;
-    const gy = GROUND_Y + 3 + Math.sin(gx * 0.03) * 4;
-    const sw = Math.sin(Date.now() * 0.002 + i) * 2;
-    ctx.beginPath(); ctx.moveTo(gx, gy);
-    ctx.quadraticCurveTo(gx + sw, gy - 7, gx + sw * 1.2, gy - 12);
-    ctx.stroke();
-  }
-
-  // 家（左側）
-  drawHouse(CX - 92, CY + RADIUS * 0.48);
-
-  // 桜の木（中央）
-  drawSakuraTree(TREE_X, TREE_BASE_Y);
-
-  ctx.restore();
-}
-
-function drawSun(x, y) {
-  // ハロー
-  const halo = ctx.createRadialGradient(x, y, 0, x, y, 70);
-  halo.addColorStop(0, 'rgba(255,230,170,0.55)');
-  halo.addColorStop(0.45, 'rgba(255,200,150,0.22)');
-  halo.addColorStop(1, 'rgba(255,200,150,0)');
-  ctx.fillStyle = halo;
-  ctx.fillRect(x - 70, y - 70, 140, 140);
-  // 光芒
-  ctx.strokeStyle = 'rgba(255,220,120,0.42)';
-  ctx.lineWidth = 2;
-  for (let i = 0; i < 10; i++) {
-    const a = (Math.PI * 2 / 10) * i + Date.now() * 0.0004;
-    ctx.beginPath();
-    ctx.moveTo(x + Math.cos(a) * 28, y + Math.sin(a) * 28);
-    ctx.lineTo(x + Math.cos(a) * 38, y + Math.sin(a) * 38);
-    ctx.stroke();
-  }
-  // 本体
-  const disc = ctx.createRadialGradient(x - 5, y - 5, 0, x, y, 26);
-  disc.addColorStop(0, '#fffbc8');
-  disc.addColorStop(0.6, '#ffd870');
-  disc.addColorStop(1, '#ffaa40');
-  ctx.fillStyle = disc;
-  ctx.beginPath(); ctx.arc(x, y, 24, 0, Math.PI * 2); ctx.fill();
-}
-
-function drawSakuraTree(x, yBase) {
-  // 幹
-  ctx.fillStyle = '#6a4530';
-  ctx.beginPath();
-  ctx.moveTo(x - 8, yBase + 2);
-  ctx.bezierCurveTo(x - 5, yBase - 30, x - 3, yBase - 60, x - 4, yBase - 80);
-  ctx.lineTo(x + 4, yBase - 80);
-  ctx.bezierCurveTo(x + 3, yBase - 60, x + 5, yBase - 30, x + 8, yBase + 2);
-  ctx.closePath();
-  ctx.fill();
-
-  // 枝
-  ctx.strokeStyle = '#5a3a26';
-  ctx.lineWidth = 2;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(x, yBase - 78); ctx.lineTo(x - 22, yBase - 108);
-  ctx.moveTo(x, yBase - 78); ctx.lineTo(x + 22, yBase - 104);
-  ctx.moveTo(x, yBase - 78); ctx.lineTo(x - 8, yBase - 130);
-  ctx.moveTo(x - 22, yBase - 108); ctx.lineTo(x - 38, yBase - 118);
-  ctx.moveTo(x + 22, yBase - 104); ctx.lineTo(x + 40, yBase - 112);
-  ctx.stroke();
-
-  // 葉群（桜の花雲）
-  for (const c of TREE_CANOPY) {
-    const grad = ctx.createRadialGradient(c.cx - 4, c.cy - 4, 0, c.cx, c.cy, c.r);
-    grad.addColorStop(0, '#ffe0ea');
-    grad.addColorStop(0.55, '#f8bdd0');
-    grad.addColorStop(1, '#e895b0');
-    ctx.fillStyle = grad;
-    ctx.beginPath(); ctx.arc(c.cx, c.cy, c.r, 0, Math.PI * 2); ctx.fill();
-  }
-  // ハイライト
-  ctx.fillStyle = 'rgba(255,255,255,0.15)';
-  ctx.beginPath(); ctx.ellipse(x - 16, yBase - 120, 22, 10, -0.3, 0, Math.PI*2); ctx.fill();
-}
-
-function drawHouse(x, y) {
-  ctx.fillStyle = '#d8b080'; ctx.fillRect(x - 20, y - 10, 40, 30);
-  ctx.fillStyle = '#a05838';
-  ctx.beginPath(); ctx.moveTo(x - 26, y - 10); ctx.lineTo(x, y - 32); ctx.lineTo(x + 26, y - 10); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#ffe680'; ctx.fillRect(x - 12, y - 4, 10, 8); ctx.fillRect(x + 2, y - 4, 10, 8);
-  ctx.strokeStyle = '#a08060'; ctx.lineWidth = 1;
-  ctx.strokeRect(x - 12, y - 4, 10, 8); ctx.strokeRect(x + 2, y - 4, 10, 8);
-  ctx.fillStyle = '#8a6040'; ctx.fillRect(x - 5, y + 6, 10, 14);
-}
-
-function drawBlossom(b) {
-  const size = b.size * b.depth;
-  ctx.save();
-  ctx.translate(b.x, b.y);
-  ctx.rotate(b.rotation);
-  ctx.globalAlpha = b.opacity;
-  // 花びら5枚
-  for (let i = 0; i < 5; i++) {
-    ctx.save();
-    ctx.rotate((Math.PI * 2 / 5) * i);
-    ctx.fillStyle = b.color;
-    ctx.beginPath();
-    ctx.ellipse(0, -size * 0.55, size * 0.42, size * 0.62, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // ハイライト
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.beginPath();
-    ctx.ellipse(-size * 0.1, -size * 0.75, size * 0.15, size * 0.2, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-  // 中心
-  ctx.fillStyle = '#ffd470';
-  ctx.beginPath(); ctx.arc(0, 0, size * 0.22, 0, Math.PI * 2); ctx.fill();
-  ctx.restore();
-  ctx.globalAlpha = 1;
-}
-
-function drawFlowers() {
-  const now = Date.now();
-  for (const f of flowers) {
-    if (f.life <= 0) continue;
-    if (f.phase === 0) {
-      f.size += (f.maxSize - f.size) * 0.08;
-      if (f.size > f.maxSize * 0.95) { f.phase = 1; f.bloomTime = now; }
-    } else if (f.phase === 1) {
-      if (now - f.bloomTime > f.bloomDuration) f.phase = 2;
-    } else {
-      f.life -= 0.012;
+    function enableOrientation() {
+      sensorReady = true;
+      window.addEventListener('deviceorientation', (e) => {
+        tiltX = Math.max(-1, Math.min(1, (e.gamma || 0) / 60));
+        tiltY = Math.max(-1, Math.min(1, ((e.beta || 90) - 90) / 60));
+      });
     }
-    ctx.globalAlpha = f.life;
-    // 頭の中心位置：地面生えなら茎の上、壁張り付きならその場
-    const hx = f.x;
-    const hy = f.isGround ? (f.y - f.size * 0.9) : f.y;
-    if (f.isGround) {
-      ctx.strokeStyle = '#3a8a28'; ctx.lineWidth = 1.3;
-      ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(hx, hy); ctx.stroke();
+
+    let lastShakeSpawn = 0;
+    let lastSwipeSpawn = 0;
+
+    function enableMotion() {
+      window.addEventListener('devicemotion', (e) => {
+        const a = e.accelerationIncludingGravity; if (!a) return;
+        const dx = a.x - lastAccel.x, dy = a.y - lastAccel.y, dz = a.z - lastAccel.z;
+        const force = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        motionBaseline = motionBaseline * 0.98 + force * 0.02;
+        const net = force - motionBaseline;
+        if (net > 2) shakeForce = Math.min(shakeForce + net * 0.6, 22);
+        // 振るとさくらを複数撒く
+        if (net > 5) {
+          const now = Date.now();
+          if (now - lastShakeSpawn > 90) {
+            const n = 1 + Math.floor(Math.random() * 2);
+            for (let i = 0; i < n; i++) spawnBlossom();
+            lastShakeSpawn = now;
+          }
+        }
+        lastAccel = { x: a.x || 0, y: a.y || 0, z: a.z || 0 };
+      });
     }
-    // 花
-    ctx.save(); ctx.translate(hx, hy);
-    for (let i = 0; i < f.petals; i++) {
-      ctx.save(); ctx.rotate((Math.PI * 2 / f.petals) * i);
-      ctx.fillStyle = f.color;
-      ctx.beginPath(); ctx.ellipse(0, -f.size * 0.5, f.size * 0.3, f.size * 0.5, 0, 0, Math.PI*2); ctx.fill();
+    function enableTouchFallback() {
+      let touching = false;
+      function maybeSpawnFromTree() {
+        const now = Date.now();
+        if (now - lastSwipeSpawn < 70) return;
+        const n = 1 + Math.floor(Math.random() * 2);
+        for (let i = 0; i < n; i++) spawnBlossom();
+        lastSwipeSpawn = now;
+      }
+      canvas.addEventListener('mousedown', () => { touching = true; maybeSpawnFromTree(); });
+      canvas.addEventListener('mouseup', () => { touching = false; tiltX = 0; tiltY = 0; });
+      canvas.addEventListener('mousemove', (e) => {
+        if (!touching) return;
+        const r = canvas.getBoundingClientRect();
+        tiltX = ((e.clientX - r.left) / r.width * 2 - 1) * 0.8;
+        tiltY = ((e.clientY - r.top) / r.height * 2 - 1) * 0.8;
+        maybeSpawnFromTree();
+      });
+      let lastTap = 0;
+      canvas.addEventListener('click', () => { const n = Date.now(); if (n - lastTap < 400) shakeForce = 16; lastTap = n; });
+      canvas.addEventListener('touchstart', (e) => { e.preventDefault(); touching = true; ut(e); }, { passive: false });
+      canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (touching) ut(e); }, { passive: false });
+      canvas.addEventListener('touchend', () => { touching = false; tiltX = 0; tiltY = 0; });
+      function ut(e) {
+        const t = e.touches[0], r = canvas.getBoundingClientRect();
+        tiltX = ((t.clientX - r.left) / r.width * 2 - 1) * 0.8;
+        tiltY = ((t.clientY - r.top) / r.height * 2 - 1) * 0.8;
+        maybeSpawnFromTree();
+      }
+    }
+    function initSensor() {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        document.getElementById('permission-btn').style.display = 'block';
+        document.getElementById('permission-btn').addEventListener('click', requestSensor);
+      } else if ('DeviceOrientationEvent' in window) {
+        enableOrientation(); if ('DeviceMotionEvent' in window) enableMotion();
+        setTimeout(() => { if (!sensorReady) enableTouchFallback(); }, 1500);
+      }
+      enableTouchFallback();
+    }
+
+    // ===== 描画 =====
+    function drawBackground() {
+      ctx.save();
+      ctx.beginPath(); ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2); ctx.clip();
+
+      // 春の空（淡いピンク→クリーム→空色）
+      const sky = ctx.createLinearGradient(0, 0, 0, SIZE);
+      sky.addColorStop(0, '#ffd8e4');
+      sky.addColorStop(0.45, '#ffe8dc');
+      sky.addColorStop(0.75, '#d8ecf8');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, SIZE, SIZE);
+
+      // 太陽
+      drawSun(SUN_X, SUN_Y);
+
+      // 雲（ゆっくり流れる）
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      const co = (Date.now() * 0.006) % (SIZE + 100) - 50;
+      ctx.beginPath(); ctx.ellipse(co, 48, 30, 12, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(co - 16, 52, 20, 9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(co + 18, 52, 22, 10, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      const co2 = ((Date.now() * 0.004) + 200) % (SIZE + 100) - 50;
+      ctx.beginPath(); ctx.ellipse(co2, 100, 24, 9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(co2 + 14, 102, 16, 7, 0, 0, Math.PI * 2); ctx.fill();
+
+      // 草原
+      const grass = ctx.createLinearGradient(0, GROUND_Y - 10, 0, CY + RADIUS);
+      grass.addColorStop(0, '#88c070');
+      grass.addColorStop(0.5, '#6fa858');
+      grass.addColorStop(1, '#508a38');
+      ctx.fillStyle = grass;
+      ctx.beginPath();
+      ctx.moveTo(CX - RADIUS, GROUND_Y);
+      ctx.quadraticCurveTo(CX - RADIUS * 0.5, GROUND_Y - 6, CX, GROUND_Y - 2);
+      ctx.quadraticCurveTo(CX + RADIUS * 0.5, GROUND_Y + 6, CX + RADIUS, GROUND_Y);
+      ctx.lineTo(CX + RADIUS, CY + RADIUS);
+      ctx.arc(CX, CY, RADIUS, 0, Math.PI, false);
+      ctx.closePath();
+      ctx.fill();
+
+      // 草のゆらぎ
+      ctx.strokeStyle = 'rgba(80,160,60,0.35)';
+      ctx.lineWidth = 1.3;
+      for (let i = 0; i < 18; i++) {
+        const gx = CX - RADIUS * 0.75 + (RADIUS * 1.5 / 18) * i + Math.sin(i * 5) * 5;
+        const gy = GROUND_Y + 3 + Math.sin(gx * 0.03) * 4;
+        const sw = Math.sin(Date.now() * 0.002 + i) * 2;
+        ctx.beginPath(); ctx.moveTo(gx, gy);
+        ctx.quadraticCurveTo(gx + sw, gy - 7, gx + sw * 1.2, gy - 12);
+        ctx.stroke();
+      }
+
+      // 家（左側）
+      drawHouse(CX - 92, CY + RADIUS * 0.48);
+
+      // 桜の木（中央）
+      drawSakuraTree(TREE_X, TREE_BASE_Y);
+
       ctx.restore();
     }
-    ctx.fillStyle = '#ffee88'; ctx.beginPath(); ctx.arc(0, 0, f.size * 0.22, 0, Math.PI*2); ctx.fill();
-    ctx.restore();
-  }
-  ctx.globalAlpha = 1;
-  for (let i = flowers.length - 1; i >= 0; i--) { if (flowers[i].life <= 0) flowers.splice(i, 1); }
-}
 
-// ===== 動物 =====
-function updatePets() {
-  const now = Date.now();
-  const MIN_X = CX - RADIUS * 0.82;
-  const MAX_X = CX + RADIUS * 0.82;
-  for (const p of pets) {
-    if (now > p.nextTurn) {
-      p.vx = (Math.random() - 0.5) * 0.7;
-      p.nextTurn = now + 1800 + Math.random() * 3200;
-    }
-    p.x += p.vx;
-    if (p.x < MIN_X) { p.x = MIN_X; p.vx = Math.abs(p.vx); }
-    if (p.x > MAX_X) { p.x = MAX_X; p.vx = -Math.abs(p.vx); }
-    // 木の幹（CX ± 10）を避ける
-    if (Math.abs(p.x - CX) < 16) {
-      p.vx = (p.x < CX) ? -Math.abs(p.vx || 0.3) : Math.abs(p.vx || 0.3);
-      p.x += p.vx * 2;
-    }
-    // 家（CX - 92 ± 22）を避ける
-    if (p.x > CX - 114 && p.x < CX - 70) {
-      p.vx = (p.x < CX - 92) ? -Math.abs(p.vx || 0.3) : Math.abs(p.vx || 0.3);
-    }
-  }
-}
-
-function drawPets() {
-  const now = Date.now();
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'bottom';
-  ctx.font = '22px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
-  for (const p of pets) {
-    const bounce = Math.abs(Math.sin(now * 0.012 + p.phase)) * 1.5;
-    ctx.fillText(p.emoji, p.x, GROUND_Y + 16 - bounce);
-  }
-  ctx.restore();
-}
-
-function drawDomeGlass() {
-  ctx.save(); ctx.beginPath(); ctx.arc(CX, CY, RADIUS, 0, Math.PI*2); ctx.clip();
-  const hl = ctx.createRadialGradient(CX - 40, CY - 60, 10, CX - 40, CY - 60, 120);
-  hl.addColorStop(0, 'rgba(255,255,255,0.14)'); hl.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = hl; ctx.fillRect(0, 0, SIZE, SIZE);
-  ctx.strokeStyle = 'rgba(255,200,220,0.18)'; ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.arc(CX, CY, RADIUS - 2, 0, Math.PI*2); ctx.stroke();
-  ctx.restore();
-}
-
-// ===== 物理 =====
-function update() {
-  const gravity = 0.025, tiltForce = 0.06;
-  shakeForce *= 0.97; if (shakeForce < 0.05) shakeForce = 0;
-  const turbulence = Math.min(shakeForce * 0.05, 0.5);
-  const affectProb = Math.min(shakeForce * 0.06, 0.6);
-
-  for (const b of blossoms) {
-    b.age++;
-    if (b.state === 'falling') {
-      b.vy += gravity * b.depth;
-      b.vx += tiltX * tiltForce * b.depth;
-      b.vy += tiltY * tiltForce * 0.4 * b.depth;
-      if (turbulence > 0.01 && Math.random() < affectProb) {
-        b.vx += (Math.random() - 0.5) * turbulence * b.depth * 1.2;
-        b.vy += (Math.random() - 0.55) * turbulence * b.depth * 1.2;
+    function drawSun(x, y) {
+      // ハロー
+      const halo = ctx.createRadialGradient(x, y, 0, x, y, 70);
+      halo.addColorStop(0, 'rgba(255,230,170,0.55)');
+      halo.addColorStop(0.45, 'rgba(255,200,150,0.22)');
+      halo.addColorStop(1, 'rgba(255,200,150,0)');
+      ctx.fillStyle = halo;
+      ctx.fillRect(x - 70, y - 70, 140, 140);
+      // 光芒
+      ctx.strokeStyle = 'rgba(255,220,120,0.42)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 10; i++) {
+        const a = (Math.PI * 2 / 10) * i + Date.now() * 0.0004;
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(a) * 28, y + Math.sin(a) * 28);
+        ctx.lineTo(x + Math.cos(a) * 38, y + Math.sin(a) * 38);
+        ctx.stroke();
       }
-      b.vx += Math.sin(Date.now() * 0.001 + b.rotation) * 0.02;
-      b.vx *= 0.985; b.vy *= 0.985;
-      b.x += b.vx; b.y += b.vy;
-      b.rotation += b.rotSpeed;
-
-      // 木の葉群との接触判定：
-      // - 木から散ったばかりの花は、まず一度外に出るまで再付着しない（escapedTree）
-      // - 外から飛んできた/一度外に出た花は、中で 7%/frame で停止
-      const inCanopy = isInTreeCanopy(b.x, b.y);
-      if (!inCanopy) b.escapedTree = true;
-      if (inCanopy && b.escapedTree && Math.random() < 0.07) {
-        b.state = 'on_tree';
-        b.vx = 0; b.vy = 0;
-      }
-
-      // 地面に着いたら地面の花に変化（茎あり。粒子ごとにバラついた深さに着地）
-      if (b.y > b.landingY) {
-        b.state = 'landed';
-        spawnFlower(b.x, b.landingY);
-        continue;
-      }
-
-      // ドームの縁（壁）にぶつかったら、その場で花になる（茎なしで貼り付き）
-      const dx = b.x - CX, dy = b.y - CY;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-      if (dist > RADIUS - b.size - 2) {
-        const ang = Math.atan2(dy, dx);
-        const fx = CX + Math.cos(ang) * (RADIUS - b.size - 4);
-        const fy = CY + Math.sin(ang) * (RADIUS - b.size - 4);
-        spawnFlower(fx, fy);
-        b.state = 'landed';
-      }
-    } else if (b.state === 'on_tree') {
-      b.rotation += b.rotSpeed * 0.15;
+      // 本体
+      const disc = ctx.createRadialGradient(x - 5, y - 5, 0, x, y, 26);
+      disc.addColorStop(0, '#fffbc8');
+      disc.addColorStop(0.6, '#ffd870');
+      disc.addColorStop(1, '#ffaa40');
+      ctx.fillStyle = disc;
+      ctx.beginPath(); ctx.arc(x, y, 24, 0, Math.PI * 2); ctx.fill();
     }
-  }
-  for (let i = blossoms.length - 1; i >= 0; i--) {
-    if (blossoms[i].state === 'landed') blossoms.splice(i, 1);
-  }
-}
 
-function render() {
-  update();
-  updatePets();
-  ctx.clearRect(0, 0, SIZE, SIZE);
-  drawBackground();
+    function drawSakuraTree(x, yBase) {
+      // 幹
+      ctx.fillStyle = '#6a4530';
+      ctx.beginPath();
+      ctx.moveTo(x - 8, yBase + 2);
+      ctx.bezierCurveTo(x - 5, yBase - 30, x - 3, yBase - 60, x - 4, yBase - 80);
+      ctx.lineTo(x + 4, yBase - 80);
+      ctx.bezierCurveTo(x + 3, yBase - 60, x + 5, yBase - 30, x + 8, yBase + 2);
+      ctx.closePath();
+      ctx.fill();
 
-  // 地面の花・動物・花びら（ドーム内にクリップ）
-  ctx.save(); ctx.beginPath(); ctx.arc(CX, CY, RADIUS, 0, Math.PI*2); ctx.clip();
-  drawFlowers();
-  drawPets();
+      // 枝
+      ctx.strokeStyle = '#5a3a26';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x, yBase - 78); ctx.lineTo(x - 22, yBase - 108);
+      ctx.moveTo(x, yBase - 78); ctx.lineTo(x + 22, yBase - 104);
+      ctx.moveTo(x, yBase - 78); ctx.lineTo(x - 8, yBase - 130);
+      ctx.moveTo(x - 22, yBase - 108); ctx.lineTo(x - 38, yBase - 118);
+      ctx.moveTo(x + 22, yBase - 104); ctx.lineTo(x + 40, yBase - 112);
+      ctx.stroke();
 
-  // 木の上の花 → 落下中（奥行き順）
-  const onTree = [], falling = [];
-  for (const b of blossoms) {
-    if (b.state === 'on_tree') onTree.push(b);
-    else if (b.state === 'falling') falling.push(b);
-  }
-  onTree.sort((a, b) => a.depth - b.depth);
-  falling.sort((a, b) => a.depth - b.depth);
-  for (const b of onTree) drawBlossom(b);
-  for (const b of falling) drawBlossom(b);
-  ctx.restore();
-
-  drawDomeGlass();
-  requestAnimationFrame(render);
-}
-
-// ===== 起動 =====
-populateTree(INITIAL_TREE_BLOSSOMS);
-initSensor();
-
-// 時計
-function updateClock() {
-  const now = new Date();
-  const h = String(now.getHours()).padStart(2, '0');
-  const m = String(now.getMinutes()).padStart(2, '0');
-  document.getElementById('clock').textContent = h + ':' + m;
-}
-updateClock();
-setInterval(updateClock, 1000);
-
-// 自動まく
-const autoBtn = document.getElementById('auto-btn');
-autoBtn.addEventListener('click', () => {
-  autoSpawn = !autoSpawn;
-  autoBtn.classList.toggle('active', autoSpawn);
-  if (autoSpawn) startAutoSpawn(); else stopAutoSpawn();
-});
-
-// どーんと一気にまく（バックグラウンド復帰時の「ぶわ～」を再現）
-const burstBtn = document.getElementById('burst-btn');
-burstBtn.addEventListener('click', () => {
-  for (let i = 0; i < 100; i++) spawnBlossom();
-  // 既に宙にあるやつにも乱流をかけて一緒に舞い落ちさせる
-  shakeForce = Math.min(shakeForce + 10, 22);
-  if (navigator.vibrate) { try { navigator.vibrate(60); } catch(e) {} }
-});
-
-// ===== トースト =====
-let toastTimer = null;
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-// ===== BGM =====
-const BGM_TRACKS = [
-  null,
-  { name: '宇宙', src: './seishishitauchu.mp3' },
-  { name: '夢',   src: './tenshinoyume.mp3' },
-  { name: '星',   src: './yuubenohoshi.mp3' }
-];
-let bgmIndex = 0;
-let bgmAudio = null;
-const bgmBtn = document.getElementById('bgm-btn');
-bgmBtn.addEventListener('click', () => {
-  bgmIndex = (bgmIndex + 1) % BGM_TRACKS.length;
-  if (bgmAudio) { bgmAudio.pause(); bgmAudio.src = ''; bgmAudio = null; }
-  const track = BGM_TRACKS[bgmIndex];
-  if (track) {
-    bgmAudio = new Audio(track.src);
-    bgmAudio.loop = true;
-    bgmAudio.volume = 0.4;
-    bgmAudio.play().catch(() => showToast('再生できなかった'));
-    bgmBtn.textContent = `🎵 ${track.name}`;
-    bgmBtn.classList.add('active');
-  } else {
-    bgmBtn.textContent = '🎵 おふ';
-    bgmBtn.classList.remove('active');
-  }
-});
-
-// ===== スリープ回避（Screen Wake Lock） =====
-const AWAKE_MS = 15 * 60 * 1000;
-let wakeLock = null;
-let awakeUntil = 0;
-let awakeTicker = null;
-let lastDisplayedMin = -1;
-const awakeBtn = document.getElementById('awake-btn');
-
-async function acquireWakeLock() {
-  if (!('wakeLock' in navigator)) return false;
-  try {
-    wakeLock = await navigator.wakeLock.request('screen');
-    wakeLock.addEventListener('release', () => { wakeLock = null; });
-    return true;
-  } catch (e) { return false; }
-}
-function releaseWakeLock() {
-  if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
-}
-function renderAwakeBtn() {
-  if (awakeUntil) {
-    const remMin = Math.max(0, Math.ceil((awakeUntil - Date.now()) / 60000));
-    if (remMin !== lastDisplayedMin) {
-      awakeBtn.textContent = `🔆 あと${remMin}分`;
-      lastDisplayedMin = remMin;
+      // 葉群（桜の花雲）
+      for (const c of TREE_CANOPY) {
+        const grad = ctx.createRadialGradient(c.cx - 4, c.cy - 4, 0, c.cx, c.cy, c.r);
+        grad.addColorStop(0, '#ffe0ea');
+        grad.addColorStop(0.55, '#f8bdd0');
+        grad.addColorStop(1, '#e895b0');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(c.cx, c.cy, c.r, 0, Math.PI * 2); ctx.fill();
+      }
+      // ハイライト
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.beginPath(); ctx.ellipse(x - 16, yBase - 120, 22, 10, -0.3, 0, Math.PI * 2); ctx.fill();
     }
-  } else {
-    awakeBtn.textContent = '🔆 しばらく見る';
-    lastDisplayedMin = -1;
-  }
-}
-async function startAwake() {
-  if (!('wakeLock' in navigator)) { showToast('この端末では非対応だよ'); return; }
-  const ok = await acquireWakeLock();
-  if (!ok) { showToast('スリープ回避できなかった'); return; }
-  awakeUntil = Date.now() + AWAKE_MS;
-  awakeBtn.classList.add('active');
-  renderAwakeBtn();
-  showToast('15分 表示しつづけます');
-  if (awakeTicker) clearInterval(awakeTicker);
-  awakeTicker = setInterval(() => {
-    if (Date.now() >= awakeUntil) { stopAwake('15分経過したよ'); return; }
-    renderAwakeBtn();
-  }, 1000);
-}
-function stopAwake(reason) {
-  releaseWakeLock();
-  awakeUntil = 0;
-  if (awakeTicker) { clearInterval(awakeTicker); awakeTicker = null; }
-  awakeBtn.classList.remove('active');
-  renderAwakeBtn();
-  if (reason) showToast(reason);
-}
-awakeBtn.addEventListener('click', () => {
-  if (awakeUntil) stopAwake('スリープ回避を解除');
-  else startAwake();
-});
-document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState === 'visible' && awakeUntil) {
-    if (Date.now() >= awakeUntil) stopAwake();
-    else if (!wakeLock) await acquireWakeLock();
-  }
-});
 
-// 開始
-render();
+    function drawHouse(x, y) {
+      ctx.fillStyle = '#d8b080'; ctx.fillRect(x - 20, y - 10, 40, 30);
+      ctx.fillStyle = '#a05838';
+      ctx.beginPath(); ctx.moveTo(x - 26, y - 10); ctx.lineTo(x, y - 32); ctx.lineTo(x + 26, y - 10); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ffe680'; ctx.fillRect(x - 12, y - 4, 10, 8); ctx.fillRect(x + 2, y - 4, 10, 8);
+      ctx.strokeStyle = '#a08060'; ctx.lineWidth = 1;
+      ctx.strokeRect(x - 12, y - 4, 10, 8); ctx.strokeRect(x + 2, y - 4, 10, 8);
+      ctx.fillStyle = '#8a6040'; ctx.fillRect(x - 5, y + 6, 10, 14);
+    }
 
-// 戻るボタン：履歴に index.html を積まず history.back() で戻る
-// （メニューに居るときに Android ◀ を押すと PWA が終了するように）
-document.querySelector('.back-btn').addEventListener('click', (e) => {
-  if (history.length > 1) {
-    e.preventDefault();
-    history.back();
-  }
-});
+    function drawBlossom(b) {
+      const size = b.size * b.depth;
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.rotation);
+      ctx.globalAlpha = b.opacity;
+      // 花びら5枚
+      for (let i = 0; i < 5; i++) {
+        ctx.save();
+        ctx.rotate((Math.PI * 2 / 5) * i);
+        ctx.fillStyle = b.color;
+        ctx.beginPath();
+        ctx.ellipse(0, -size * 0.55, size * 0.42, size * 0.62, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // ハイライト
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.beginPath();
+        ctx.ellipse(-size * 0.1, -size * 0.75, size * 0.15, size * 0.2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      // 中心
+      ctx.fillStyle = '#ffd470';
+      ctx.beginPath(); ctx.arc(0, 0, size * 0.22, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
 
-// Service Worker 登録（PWA）
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js').catch((err) => {
-      console.warn('SW registration failed:', err);
+    function drawFlowers() {
+      const now = Date.now();
+      for (const f of flowers) {
+        if (f.life <= 0) continue;
+        if (f.phase === 0) {
+          f.size += (f.maxSize - f.size) * 0.08;
+          if (f.size > f.maxSize * 0.95) { f.phase = 1; f.bloomTime = now; }
+        } else if (f.phase === 1) {
+          if (now - f.bloomTime > f.bloomDuration) f.phase = 2;
+        } else {
+          f.life -= 0.012;
+        }
+        ctx.globalAlpha = f.life;
+        // 頭の中心位置：地面生えなら茎の上、壁張り付きならその場
+        const hx = f.x;
+        const hy = f.isGround ? (f.y - f.size * 0.9) : f.y;
+        if (f.isGround) {
+          ctx.strokeStyle = '#3a8a28'; ctx.lineWidth = 1.3;
+          ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(hx, hy); ctx.stroke();
+        }
+        // 花
+        ctx.save(); ctx.translate(hx, hy);
+        for (let i = 0; i < f.petals; i++) {
+          ctx.save(); ctx.rotate((Math.PI * 2 / f.petals) * i);
+          ctx.fillStyle = f.color;
+          ctx.beginPath(); ctx.ellipse(0, -f.size * 0.5, f.size * 0.3, f.size * 0.5, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+        }
+        ctx.fillStyle = '#ffee88'; ctx.beginPath(); ctx.arc(0, 0, f.size * 0.22, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+      for (let i = flowers.length - 1; i >= 0; i--) { if (flowers[i].life <= 0) flowers.splice(i, 1); }
+    }
+
+    // ===== 動物 =====
+    function updatePets() {
+      const now = Date.now();
+      const MIN_X = CX - RADIUS * 0.82;
+      const MAX_X = CX + RADIUS * 0.82;
+      for (const p of pets) {
+        if (now > p.nextTurn) {
+          p.vx = (Math.random() - 0.5) * 0.7;
+          p.nextTurn = now + 1800 + Math.random() * 3200;
+        }
+        p.x += p.vx;
+        if (p.x < MIN_X) { p.x = MIN_X; p.vx = Math.abs(p.vx); }
+        if (p.x > MAX_X) { p.x = MAX_X; p.vx = -Math.abs(p.vx); }
+        // 木の幹（CX ± 10）を避ける
+        if (Math.abs(p.x - CX) < 16) {
+          p.vx = (p.x < CX) ? -Math.abs(p.vx || 0.3) : Math.abs(p.vx || 0.3);
+          p.x += p.vx * 2;
+        }
+        // 家（CX - 92 ± 22）を避ける
+        if (p.x > CX - 114 && p.x < CX - 70) {
+          p.vx = (p.x < CX - 92) ? -Math.abs(p.vx || 0.3) : Math.abs(p.vx || 0.3);
+        }
+      }
+    }
+
+    function drawPets() {
+      const now = Date.now();
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.font = '22px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+      for (const p of pets) {
+        const bounce = Math.abs(Math.sin(now * 0.012 + p.phase)) * 1.5;
+        ctx.fillText(p.emoji, p.x, GROUND_Y + 16 - bounce);
+      }
+      ctx.restore();
+    }
+
+    function drawDomeGlass() {
+      ctx.save(); ctx.beginPath(); ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2); ctx.clip();
+      const hl = ctx.createRadialGradient(CX - 40, CY - 60, 10, CX - 40, CY - 60, 120);
+      hl.addColorStop(0, 'rgba(255,255,255,0.14)'); hl.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = hl; ctx.fillRect(0, 0, SIZE, SIZE);
+      ctx.strokeStyle = 'rgba(255,200,220,0.18)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(CX, CY, RADIUS - 2, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+
+    // ===== 物理 =====
+    function update() {
+      const gravity = 0.025, tiltForce = 0.06;
+      shakeForce *= 0.97; if (shakeForce < 0.05) shakeForce = 0;
+      const turbulence = Math.min(shakeForce * 0.05, 0.5);
+      const affectProb = Math.min(shakeForce * 0.06, 0.6);
+
+      for (const b of blossoms) {
+        b.age++;
+        if (b.state === 'falling') {
+          b.vy += gravity * b.depth;
+          b.vx += tiltX * tiltForce * b.depth;
+          b.vy += tiltY * tiltForce * 0.4 * b.depth;
+          if (turbulence > 0.01 && Math.random() < affectProb) {
+            b.vx += (Math.random() - 0.5) * turbulence * b.depth * 1.2;
+            b.vy += (Math.random() - 0.55) * turbulence * b.depth * 1.2;
+          }
+          b.vx += Math.sin(Date.now() * 0.001 + b.rotation) * 0.02;
+          b.vx *= 0.985; b.vy *= 0.985;
+          b.x += b.vx; b.y += b.vy;
+          b.rotation += b.rotSpeed;
+
+          // 木の葉群との接触判定：
+          // - 木から散ったばかりの花は、まず一度外に出るまで再付着しない（escapedTree）
+          // - 外から飛んできた/一度外に出た花は、中で 7%/frame で停止
+          const inCanopy = isInTreeCanopy(b.x, b.y);
+          if (!inCanopy) b.escapedTree = true;
+          if (inCanopy && b.escapedTree && Math.random() < 0.07) {
+            b.state = 'on_tree';
+            b.vx = 0; b.vy = 0;
+          }
+
+          // 地面に着いたら地面の花に変化（茎あり。粒子ごとにバラついた深さに着地）
+          if (b.y > b.landingY) {
+            b.state = 'landed';
+            spawnFlower(b.x, b.landingY);
+            continue;
+          }
+
+          // ドームの縁（壁）にぶつかったら、その場で花になる（茎なしで貼り付き）
+          const dx = b.x - CX, dy = b.y - CY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > RADIUS - b.size - 2) {
+            const ang = Math.atan2(dy, dx);
+            const fx = CX + Math.cos(ang) * (RADIUS - b.size - 4);
+            const fy = CY + Math.sin(ang) * (RADIUS - b.size - 4);
+            spawnFlower(fx, fy);
+            b.state = 'landed';
+          }
+        } else if (b.state === 'on_tree') {
+          b.rotation += b.rotSpeed * 0.15;
+        }
+      }
+      for (let i = blossoms.length - 1; i >= 0; i--) {
+        if (blossoms[i].state === 'landed') blossoms.splice(i, 1);
+      }
+    }
+
+    function render() {
+      update();
+      updatePets();
+      ctx.clearRect(0, 0, SIZE, SIZE);
+      drawBackground();
+
+      // 地面の花・動物・花びら（ドーム内にクリップ）
+      ctx.save(); ctx.beginPath(); ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2); ctx.clip();
+      drawFlowers();
+      drawPets();
+
+      // 木の上の花 → 落下中（奥行き順）
+      const onTree = [], falling = [];
+      for (const b of blossoms) {
+        if (b.state === 'on_tree') onTree.push(b);
+        else if (b.state === 'falling') falling.push(b);
+      }
+      onTree.sort((a, b) => a.depth - b.depth);
+      falling.sort((a, b) => a.depth - b.depth);
+      for (const b of onTree) drawBlossom(b);
+      for (const b of falling) drawBlossom(b);
+      ctx.restore();
+
+      drawDomeGlass();
+      requestAnimationFrame(render);
+    }
+
+    // ===== 起動 =====
+    populateTree(INITIAL_TREE_BLOSSOMS);
+    initSensor();
+
+    // 時計
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('clock').textContent = h + ':' + m;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // 自動まく
+    const autoBtn = document.getElementById('auto-btn');
+    autoBtn.addEventListener('click', () => {
+      autoSpawn = !autoSpawn;
+      autoBtn.classList.toggle('active', autoSpawn);
+      if (autoSpawn) startAutoSpawn(); else stopAutoSpawn();
     });
-  });
-}
-</script>
+
+    // どーんと一気にまく（バックグラウンド復帰時の「ぶわ～」を再現）
+    const burstBtn = document.getElementById('burst-btn');
+    burstBtn.addEventListener('click', () => {
+      for (let i = 0; i < 100; i++) spawnBlossom();
+      // 既に宙にあるやつにも乱流をかけて一緒に舞い落ちさせる
+      shakeForce = Math.min(shakeForce + 10, 22);
+      if (navigator.vibrate) { try { navigator.vibrate(60); } catch (e) { } }
+    });
+
+    // ===== トースト =====
+    let toastTimer = null;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // ===== BGM =====
+    const BGM_TRACKS = [
+      null,
+      { name: '宇宙', src: './seishishitauchu.mp3' },
+      { name: '夢', src: './tenshinoyume.mp3' },
+      { name: '星', src: './yuubenohoshi.mp3' }
+    ];
+    let bgmIndex = 0;
+    let bgmAudio = null;
+    const bgmBtn = document.getElementById('bgm-btn');
+    bgmBtn.addEventListener('click', () => {
+      bgmIndex = (bgmIndex + 1) % BGM_TRACKS.length;
+      if (bgmAudio) { bgmAudio.pause(); bgmAudio.src = ''; bgmAudio = null; }
+      const track = BGM_TRACKS[bgmIndex];
+      if (track) {
+        bgmAudio = new Audio(track.src);
+        bgmAudio.loop = true;
+        bgmAudio.volume = 0.4;
+        bgmAudio.play().catch(() => showToast('再生できなかった'));
+        bgmBtn.textContent = `🎵 ${track.name}`;
+        bgmBtn.classList.add('active');
+      } else {
+        bgmBtn.textContent = '🎵 おふ';
+        bgmBtn.classList.remove('active');
+      }
+    });
+
+    // ===== スリープ回避（Screen Wake Lock） =====
+    const AWAKE_MS = 15 * 60 * 1000;
+    let wakeLock = null;
+    let awakeUntil = 0;
+    let awakeTicker = null;
+    let lastDisplayedMin = -1;
+    const awakeBtn = document.getElementById('awake-btn');
+
+    async function acquireWakeLock() {
+      if (!('wakeLock' in navigator)) return false;
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => { wakeLock = null; });
+        return true;
+      } catch (e) { return false; }
+    }
+    function releaseWakeLock() {
+      if (wakeLock) { wakeLock.release().catch(() => { }); wakeLock = null; }
+    }
+    function renderAwakeBtn() {
+      if (awakeUntil) {
+        const remMin = Math.max(0, Math.ceil((awakeUntil - Date.now()) / 60000));
+        if (remMin !== lastDisplayedMin) {
+          awakeBtn.textContent = `🔆 あと${remMin}分`;
+          lastDisplayedMin = remMin;
+        }
+      } else {
+        awakeBtn.textContent = '🔆 しばらく見る';
+        lastDisplayedMin = -1;
+      }
+    }
+    async function startAwake() {
+      if (!('wakeLock' in navigator)) { showToast('この端末では非対応だよ'); return; }
+      const ok = await acquireWakeLock();
+      if (!ok) { showToast('スリープ回避できなかった'); return; }
+      awakeUntil = Date.now() + AWAKE_MS;
+      awakeBtn.classList.add('active');
+      renderAwakeBtn();
+      showToast('15分 表示しつづけます');
+      if (awakeTicker) clearInterval(awakeTicker);
+      awakeTicker = setInterval(() => {
+        if (Date.now() >= awakeUntil) { stopAwake('15分経過したよ'); return; }
+        renderAwakeBtn();
+      }, 1000);
+    }
+    function stopAwake(reason) {
+      releaseWakeLock();
+      awakeUntil = 0;
+      if (awakeTicker) { clearInterval(awakeTicker); awakeTicker = null; }
+      awakeBtn.classList.remove('active');
+      renderAwakeBtn();
+      if (reason) showToast(reason);
+    }
+    awakeBtn.addEventListener('click', () => {
+      if (awakeUntil) stopAwake('スリープ回避を解除');
+      else startAwake();
+    });
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible' && awakeUntil) {
+        if (Date.now() >= awakeUntil) stopAwake();
+        else if (!wakeLock) await acquireWakeLock();
+      }
+    });
+
+    // 開始
+    render();
+
+    // 戻るボタン：履歴に index.html を積まず history.back() で戻る
+    // （メニューに居るときに Android ◀ を押すと PWA が終了するように）
+    document.querySelector('.back-btn').addEventListener('click', (e) => {
+      if (history.length > 1) {
+        e.preventDefault();
+        history.back();
+      }
+    });
+
+    // Service Worker 登録（PWA）
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js').catch((err) => {
+          console.warn('SW registration failed:', err);
+        });
+      });
+    }
+  </script>
 </body>
+
 </html>

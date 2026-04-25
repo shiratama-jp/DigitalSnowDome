@@ -1,290 +1,339 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0a1628">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Snow Domes">
-<meta name="mobile-web-app-capable" content="yes">
-<title>Snow Domes</title>
-<link rel="manifest" href="./manifest.json">
-<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
-<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
-<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body {
-  height: 100%;
-}
-body {
-  font-family: 'Zen Maru Gothic', sans-serif;
-  background:
-    radial-gradient(ellipse at top, #1a2a50 0%, #0a1628 55%, #05091a 100%);
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  padding: 24px 16px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-h1 {
-  font-size: clamp(22px, 7vw, 32px);
-  font-weight: 900;
-  color: rgba(220,235,255,0.95);
-  letter-spacing: 3px;
-  margin-bottom: 4px;
-  text-shadow: 0 2px 12px rgba(80,140,230,0.3);
-}
-.subtitle {
-  font-size: clamp(11px, 3vw, 13px);
-  font-weight: 500;
-  color: rgba(180,200,230,0.6);
-  letter-spacing: 2px;
-  margin-bottom: 32px;
-}
-.menu {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  width: 100%;
-  max-width: 360px;
-  margin-bottom: 24px;
-}
-.menu-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  padding: 22px 24px;
-  font-family: 'Zen Maru Gothic', sans-serif;
-  font-size: clamp(15px, 4.5vw, 18px);
-  font-weight: 900;
-  letter-spacing: 2px;
-  border-radius: 20px;
-  text-decoration: none;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-  cursor: pointer;
-}
-.menu-btn .emoji {
-  font-size: 1.4em;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-}
-.menu-btn.dome {
-  background: linear-gradient(135deg, rgba(50,80,140,0.65), rgba(20,35,70,0.6));
-  border: 1px solid rgba(180,210,255,0.3);
-  color: rgba(225,240,255,0.95);
-  box-shadow: 0 8px 28px rgba(40,80,160,0.3),
-              inset 0 0 24px rgba(180,210,255,0.08);
-}
-.menu-btn.dome:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 32px rgba(80,140,230,0.4),
-              inset 0 0 24px rgba(180,210,255,0.12);
-}
-.menu-btn.nyarm {
-  background: linear-gradient(135deg, rgba(90,75,55,0.65), rgba(60,50,40,0.6));
-  border: 1px solid rgba(255,220,160,0.3);
-  color: rgba(255,240,210,0.95);
-  box-shadow: 0 8px 28px rgba(120,90,50,0.25),
-              inset 0 0 24px rgba(255,220,160,0.08);
-}
-.menu-btn.nyarm:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 32px rgba(180,140,80,0.4),
-              inset 0 0 24px rgba(255,220,160,0.12);
-}
-.menu-btn.hoshi {
-  background: linear-gradient(135deg, rgba(90,70,150,0.65), rgba(45,30,90,0.6));
-  border: 1px solid rgba(210,190,255,0.3);
-  color: rgba(240,225,255,0.95);
-  box-shadow: 0 8px 28px rgba(110,80,200,0.28),
-              inset 0 0 24px rgba(210,190,255,0.08);
-}
-.menu-btn.hoshi:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 32px rgba(150,110,230,0.4),
-              inset 0 0 24px rgba(210,190,255,0.12);
-}
-.menu-btn.sakura {
-  background: linear-gradient(135deg, rgba(200,110,150,0.65), rgba(120,50,90,0.6));
-  border: 1px solid rgba(255,200,220,0.35);
-  color: rgba(255,230,240,0.98);
-  box-shadow: 0 8px 28px rgba(200,100,150,0.28),
-              inset 0 0 24px rgba(255,200,220,0.08);
-}
-.menu-btn.sakura:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 32px rgba(230,140,180,0.4),
-              inset 0 0 24px rgba(255,200,220,0.12);
-}
 
-/* インストール案内 */
-#install-banner {
-  display: none;
-  margin-top: 8px;
-  padding: 14px 22px;
-  width: 100%;
-  max-width: 360px;
-  background: linear-gradient(135deg, rgba(40,60,110,0.55), rgba(20,30,60,0.55));
-  border: 1px solid rgba(180,210,255,0.25);
-  border-radius: 18px;
-  box-shadow: 0 6px 24px rgba(40,80,160,0.25),
-              inset 0 0 20px rgba(180,210,255,0.05);
-  text-align: center;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-#install-banner .install-title {
-  font-size: clamp(13px, 3.6vw, 15px);
-  font-weight: 900;
-  color: rgba(210,230,255,0.95);
-  letter-spacing: 1px;
-  margin-bottom: 8px;
-}
-#install-banner .install-sub {
-  font-size: clamp(11px, 3vw, 12px);
-  font-weight: 500;
-  color: rgba(180,200,230,0.75);
-  line-height: 1.6;
-}
-#install-banner .install-sub strong {
-  color: rgba(220,235,255,0.95);
-  font-weight: 900;
-}
-#install-btn {
-  font-family: 'Zen Maru Gothic', sans-serif;
-  font-size: clamp(13px, 3.6vw, 15px);
-  font-weight: 900;
-  padding: 10px 28px;
-  border-radius: 100px;
-  border: 1px solid rgba(180,210,255,0.4);
-  cursor: pointer;
-  background: linear-gradient(135deg, #4a7dd6, #6aa2e8);
-  color: #fff;
-  letter-spacing: 1px;
-  box-shadow: 0 4px 14px rgba(80,140,230,0.4);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-#install-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(80,140,230,0.55);
-}
-.version {
-  position: fixed;
-  bottom: 8px;
-  right: 12px;
-  font-family: 'Zen Maru Gothic', sans-serif;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 1px;
-  color: rgba(180,200,230,0.35);
-  pointer-events: none;
-}
-</style>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a1628">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Snow Domes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Snow Domes</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      background:
+        radial-gradient(ellipse at top, #1a2a50 0%, #0a1628 55%, #05091a 100%);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    h1 {
+      font-size: clamp(22px, 7vw, 32px);
+      font-weight: 900;
+      color: rgba(220, 235, 255, 0.95);
+      letter-spacing: 3px;
+      margin-bottom: 4px;
+      text-shadow: 0 2px 12px rgba(80, 140, 230, 0.3);
+    }
+
+    .subtitle {
+      font-size: clamp(11px, 3vw, 13px);
+      font-weight: 500;
+      color: rgba(180, 200, 230, 0.6);
+      letter-spacing: 2px;
+      margin-bottom: 32px;
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      max-width: 360px;
+      margin-bottom: 24px;
+    }
+
+    .menu-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 22px 24px;
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: clamp(15px, 4.5vw, 18px);
+      font-weight: 900;
+      letter-spacing: 2px;
+      border-radius: 20px;
+      text-decoration: none;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      cursor: pointer;
+    }
+
+    .menu-btn .emoji {
+      font-size: 1.4em;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    }
+
+    .menu-btn.dome {
+      background: linear-gradient(135deg, rgba(50, 80, 140, 0.65), rgba(20, 35, 70, 0.6));
+      border: 1px solid rgba(180, 210, 255, 0.3);
+      color: rgba(225, 240, 255, 0.95);
+      box-shadow: 0 8px 28px rgba(40, 80, 160, 0.3),
+        inset 0 0 24px rgba(180, 210, 255, 0.08);
+    }
+
+    .menu-btn.dome:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 32px rgba(80, 140, 230, 0.4),
+        inset 0 0 24px rgba(180, 210, 255, 0.12);
+    }
+
+    .menu-btn.nyarm {
+      background: linear-gradient(135deg, rgba(90, 75, 55, 0.65), rgba(60, 50, 40, 0.6));
+      border: 1px solid rgba(255, 220, 160, 0.3);
+      color: rgba(255, 240, 210, 0.95);
+      box-shadow: 0 8px 28px rgba(120, 90, 50, 0.25),
+        inset 0 0 24px rgba(255, 220, 160, 0.08);
+    }
+
+    .menu-btn.nyarm:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 32px rgba(180, 140, 80, 0.4),
+        inset 0 0 24px rgba(255, 220, 160, 0.12);
+    }
+
+    .menu-btn.hoshi {
+      background: linear-gradient(135deg, rgba(90, 70, 150, 0.65), rgba(45, 30, 90, 0.6));
+      border: 1px solid rgba(210, 190, 255, 0.3);
+      color: rgba(240, 225, 255, 0.95);
+      box-shadow: 0 8px 28px rgba(110, 80, 200, 0.28),
+        inset 0 0 24px rgba(210, 190, 255, 0.08);
+    }
+
+    .menu-btn.hoshi:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 32px rgba(150, 110, 230, 0.4),
+        inset 0 0 24px rgba(210, 190, 255, 0.12);
+    }
+
+    .menu-btn.sakura {
+      background: linear-gradient(135deg, rgba(200, 110, 150, 0.65), rgba(120, 50, 90, 0.6));
+      border: 1px solid rgba(255, 200, 220, 0.35);
+      color: rgba(255, 230, 240, 0.98);
+      box-shadow: 0 8px 28px rgba(200, 100, 150, 0.28),
+        inset 0 0 24px rgba(255, 200, 220, 0.08);
+    }
+
+    .menu-btn.sakura:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 32px rgba(230, 140, 180, 0.4),
+        inset 0 0 24px rgba(255, 200, 220, 0.12);
+    }
+
+    .menu-btn.hanabi {
+      background: linear-gradient(135deg, rgba(200, 140, 50, 0.65), rgba(120, 60, 20, 0.6));
+      border: 1px solid rgba(255, 200, 100, 0.35);
+      color: rgba(255, 240, 200, 0.98);
+      box-shadow: 0 8px 28px rgba(200, 120, 40, 0.28),
+        inset 0 0 24px rgba(255, 180, 80, 0.08);
+    }
+
+    .menu-btn.hanabi:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 32px rgba(230, 150, 60, 0.4),
+        inset 0 0 24px rgba(255, 200, 100, 0.12);
+    }
+
+    /* インストール案内 */
+    #install-banner {
+      display: none;
+      margin-top: 8px;
+      padding: 14px 22px;
+      width: 100%;
+      max-width: 360px;
+      background: linear-gradient(135deg, rgba(40, 60, 110, 0.55), rgba(20, 30, 60, 0.55));
+      border: 1px solid rgba(180, 210, 255, 0.25);
+      border-radius: 18px;
+      box-shadow: 0 6px 24px rgba(40, 80, 160, 0.25),
+        inset 0 0 20px rgba(180, 210, 255, 0.05);
+      text-align: center;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    #install-banner .install-title {
+      font-size: clamp(13px, 3.6vw, 15px);
+      font-weight: 900;
+      color: rgba(210, 230, 255, 0.95);
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    #install-banner .install-sub {
+      font-size: clamp(11px, 3vw, 12px);
+      font-weight: 500;
+      color: rgba(180, 200, 230, 0.75);
+      line-height: 1.6;
+    }
+
+    #install-banner .install-sub strong {
+      color: rgba(220, 235, 255, 0.95);
+      font-weight: 900;
+    }
+
+    #install-btn {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: clamp(13px, 3.6vw, 15px);
+      font-weight: 900;
+      padding: 10px 28px;
+      border-radius: 100px;
+      border: 1px solid rgba(180, 210, 255, 0.4);
+      cursor: pointer;
+      background: linear-gradient(135deg, #4a7dd6, #6aa2e8);
+      color: #fff;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 14px rgba(80, 140, 230, 0.4);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #install-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(80, 140, 230, 0.55);
+    }
+
+    .version {
+      position: fixed;
+      bottom: 8px;
+      right: 12px;
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      color: rgba(180, 200, 230, 0.35);
+      pointer-events: none;
+    }
+  </style>
 </head>
+
 <body>
 
-<h1>❄️ Snow Domes ❄️</h1>
-<div class="subtitle">ふりふりして あそぼう</div>
+  <h1>❄️ Snow Domes ❄️</h1>
+  <div class="subtitle">ふりふりして あそぼう</div>
 
-<nav class="menu">
-  <a class="menu-btn dome" href="./snowdome.html">
-    <span class="emoji">❄️</span>
-    <span>スノードーム</span>
-  </a>
-  <a class="menu-btn hoshi" href="./hoshifurase.html">
-    <span class="emoji">🌟</span>
-    <span>ほしふらせ</span>
-  </a>
-  <a class="menu-btn sakura" href="./sakura-itsudemo.html">
-    <span class="emoji">🌸</span>
-    <span>さくら　いつでも</span>
-  </a>
-  <a class="menu-btn nyarm" href="./snow-nyarm.html">
-    <span class="emoji">🐱</span>
-    <span>スノーニャーム</span>
-  </a>
-</nav>
+  <nav class="menu">
+    <a class="menu-btn dome" href="./snowdome.html">
+      <span class="emoji">❄️</span>
+      <span>スノードーム</span>
+    </a>
+    <a class="menu-btn hoshi" href="./hoshifurase.html">
+      <span class="emoji">🌟</span>
+      <span>ほしふらせ</span>
+    </a>
+    <a class="menu-btn sakura" href="./sakura-itsudemo.html">
+      <span class="emoji">🌸</span>
+      <span>さくら　ふぶいて</span>
+    </a>
+    <a class="menu-btn hanabi" href="./hanabi-hakanaki.html">
+      <span class="emoji">🌠</span>
+      <span>流・星・夢</span>
+    </a>
+    <a class="menu-btn nyarm" href="./snow-nyarm.html">
+      <span class="emoji">🐱</span>
+      <span>スノーニャーム</span>
+    </a>
+  </nav>
 
-<!-- インストール案内 -->
-<div id="install-banner">
-  <div id="install-content"></div>
-</div>
+  <!-- インストール案内 -->
+  <div id="install-banner">
+    <div id="install-content"></div>
+  </div>
 
-<div class="version">Ver.260424-1.13</div>
+  <div class="version">Ver.260425-1.16</div>
 
-<script>
-// ===== インストール案内 =====
-(function() {
-  const banner = document.getElementById('install-banner');
-  const content = document.getElementById('install-content');
+  <script>
+    // ===== インストール案内 =====
+    (function () {
+      const banner = document.getElementById('install-banner');
+      const content = document.getElementById('install-content');
 
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-  if (isStandalone) return;
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      if (isStandalone) return;
 
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  let deferredPrompt = null;
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      let deferredPrompt = null;
 
-  function showTextGuide() {
-    if (isIOS) {
-      content.innerHTML =
-        '<div class="install-title">❄️ ホーム画面に追加しよう</div>' +
-        '<div class="install-sub">下の <strong>共有ボタン（□↑）</strong> から<br><strong>「ホーム画面に追加」</strong> をタップ</div>';
-    } else {
-      content.innerHTML =
-        '<div class="install-title">❄️ ホーム画面に追加しよう</div>' +
-        '<div class="install-sub">ブラウザのメニュー（⋮）から<br><strong>「ホーム画面に追加」</strong> を選択</div>';
-    }
-    banner.style.display = 'block';
-  }
+      function showTextGuide() {
+        if (isIOS) {
+          content.innerHTML =
+            '<div class="install-title">❄️ ホーム画面に追加しよう</div>' +
+            '<div class="install-sub">下の <strong>共有ボタン（□↑）</strong> から<br><strong>「ホーム画面に追加」</strong> をタップ</div>';
+        } else {
+          content.innerHTML =
+            '<div class="install-title">❄️ ホーム画面に追加しよう</div>' +
+            '<div class="install-sub">ブラウザのメニュー（⋮）から<br><strong>「ホーム画面に追加」</strong> を選択</div>';
+        }
+        banner.style.display = 'block';
+      }
 
-  if (isIOS) {
-    showTextGuide();
-  } else {
-    let prompted = false;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      prompted = true;
-      content.innerHTML =
-        '<div class="install-title">❄️ アプリとして使えるよ</div>' +
-        '<button id="install-btn">インストール ✨</button>';
-      banner.style.display = 'block';
+      if (isIOS) {
+        showTextGuide();
+      } else {
+        let prompted = false;
+        window.addEventListener('beforeinstallprompt', (e) => {
+          e.preventDefault();
+          deferredPrompt = e;
+          prompted = true;
+          content.innerHTML =
+            '<div class="install-title">❄️ アプリとして使えるよ</div>' +
+            '<button id="install-btn">インストール ✨</button>';
+          banner.style.display = 'block';
 
-      document.getElementById('install-btn').addEventListener('click', async () => {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        const result = await deferredPrompt.userChoice;
-        if (result.outcome === 'accepted') banner.style.display = 'none';
-        deferredPrompt = null;
+          document.getElementById('install-btn').addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const result = await deferredPrompt.userChoice;
+            if (result.outcome === 'accepted') banner.style.display = 'none';
+            deferredPrompt = null;
+          });
+        });
+
+        setTimeout(() => { if (!prompted) showTextGuide(); }, 2500);
+
+        window.addEventListener('appinstalled', () => {
+          banner.style.display = 'none';
+        });
+      }
+    })();
+
+    // ===== Service Worker 登録（PWA） =====
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js').catch((err) => {
+          console.warn('SW registration failed:', err);
+        });
       });
-    });
-
-    setTimeout(() => { if (!prompted) showTextGuide(); }, 2500);
-
-    window.addEventListener('appinstalled', () => {
-      banner.style.display = 'none';
-    });
-  }
-})();
-
-// ===== Service Worker 登録（PWA） =====
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js').catch((err) => {
-      console.warn('SW registration failed:', err);
-    });
-  });
-}
-</script>
+    }
+  </script>
 </body>
+
 </html>

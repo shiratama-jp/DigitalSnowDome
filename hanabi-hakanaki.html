@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Snow Domes">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>ほしふらせ</title>
+  <title>流・星・夢</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
@@ -226,12 +226,11 @@
 </head>
 
 <body>
-  <h1>🌟 ほしふらせ 🌟</h1>
+  <h1>🌠 流・星・夢 🌠</h1>
   <div id="dome-wrap"><canvas id="dome-canvas"></canvas></div>
   <div id="base">
     <div id="clock">00:00</div>
-    <button class="base-btn" id="star-btn">⭐ ほし</button>
-    <button class="base-btn" id="burst-btn">🌟 いっぱい</button>
+    <button class="base-btn" id="auto-btn">🌠 じどう</button>
   </div>
 
   <div id="controls">
@@ -278,13 +277,6 @@
     const SNOW_COUNT = 200;
     const snowflakes = [];
 
-    // 星パーティクル（別配列）
-    const stars = [];
-    const MAX_FIXED_STARS = 15; // この数まで空に留まる
-    let fixedStarCount = 0;
-    let starSpawnTimer = null;
-    let starMode = false;
-
     // 花
     const flowers = [];
 
@@ -295,35 +287,80 @@
     let motionBaseline = 0;
     let sensorReady = false;
 
-    // ===== 星 =====
-    function spawnStar(atX, atY) {
-      stars.push({
-        x: atX !== undefined ? atX : MOON_X,
-        y: atY !== undefined ? atY : MOON_Y,
-        vx: (Math.random() - 0.5) * 1.4,
-        vy: -0.2 + Math.random() * 0.6,
-        size: 2.5 + Math.random() * 3,
-        depth: 0.4 + Math.random() * 0.6,
-        opacity: 0.6 + Math.random() * 0.4,
-        shimmer: Math.random() * Math.PI * 2,
-        shimmerSpeed: 0.03 + Math.random() * 0.03,
-        state: 'falling',
-        landingY: GROUND_Y + 2 + Math.random() * 55
+    // 花火とターゲット
+    const targetEmojis = [
+      { emoji: '💎', color: '#88eeff', style: 'sparkle' },
+      { emoji: '❤️', color: '#ff6688', style: 'heart' },
+      { emoji: '🎵', color: '#88ff66', style: 'bounce' },
+      { emoji: '🔔', color: '#ffdd44', style: 'ring' }
+    ];
+    let targets = [];
+    let fireworks = [];
+    let autoHanabi = false;
+    let gameTimer = null;
+
+    // ペットたち
+    const pets = [
+      { emoji: '🐕', x: CX - 60, y: GROUND_Y + 45, baseY: GROUND_Y + 45, jumpY: 0, vx: 0.5, vy: 0, faceRight: true, jump: false },
+      { emoji: '🐈', x: CX + 60, y: GROUND_Y + 45, baseY: GROUND_Y + 45, jumpY: 0, vx: -0.6, vy: 0, faceRight: false, jump: false }
+    ];
+
+    function spawnTarget(x, y) {
+      const type = targetEmojis[Math.floor(Math.random() * targetEmojis.length)];
+      targets.push({
+        x: x !== undefined ? x : 40 + Math.random() * (SIZE - 80),
+        y: y !== undefined ? y : SKY_BOTTOM + 20 + Math.random() * 40,
+        vy: -0.9 - Math.random() * 0.6, // 天井を突き抜けない程度に調整
+        vx: (Math.random() - 0.5) * 0.4,
+        type: type,
+        life: 1,
+        age: 0,
+        burstY: SKY_TOP + Math.random() * (SKY_BOTTOM - SKY_TOP)
       });
     }
 
-    function startStarSpawn() {
-      if (starSpawnTimer) return;
-      function spawn() {
-        if (!starMode) return;
-        spawnStar();
-        starSpawnTimer = setTimeout(spawn, 800 + Math.random() * 1500);
+    function burstTarget(t) {
+      t.life = 0;
+      const count = 35 + Math.floor(Math.random() * 20);
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1.5 + Math.random() * 3.5;
+        fireworks.push({
+          x: t.x, y: t.y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          color: t.type.color,
+          style: t.type.style,
+          life: 1.2,
+          decay: 0.015 + Math.random() * 0.02
+        });
       }
-      spawn();
+      if (t.type.style === 'ring') {
+        for (let i = 0; i < 24; i++) {
+          const a = (Math.PI * 2 / 24) * i;
+          fireworks.push({
+            x: t.x, y: t.y, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3,
+            color: t.type.color, style: 'ring', life: 1.2, decay: 0.025
+          });
+        }
+      }
+      if (navigator.vibrate) { try { navigator.vibrate(30); } catch (e) { } }
+
+      // 花火の音に驚いてペットが跳ねる
+      for (const p of pets) {
+        if (Math.random() < 0.6 && p.vy === 0) p.jump = true;
+      }
     }
 
-    function stopStarSpawn() {
-      if (starSpawnTimer) { clearTimeout(starSpawnTimer); starSpawnTimer = null; }
+    function startGameSpawn() {
+      if (gameTimer) return;
+      function tick() {
+        if (targets.length < 6) {
+          spawnTarget();
+        }
+        gameTimer = setTimeout(tick, 1000 + Math.random() * 1500);
+      }
+      tick();
     }
 
     // ===== 花 =====
@@ -370,8 +407,8 @@
         if (net > 5) {
           const now = Date.now();
           if (now - lastShakeSpawn > 100) {
-            const n = 1 + (Math.random() < 0.3 ? 1 : 0);
-            for (let i = 0; i < n; i++) spawnStar();
+            const num = 2 + Math.floor(Math.random() * 3); // 2〜4個
+            for (let i = 0; i < num; i++) spawnTarget();
             lastShakeSpawn = now;
           }
         }
@@ -380,17 +417,29 @@
     }
     function enableTouchFallback() {
       let touching = false;
-      function maybeSpawnAt(clientX, clientY, rect) {
+      function maybeHitOrSpawnAt(clientX, clientY, rect) {
         const now = Date.now();
         if (now - lastSwipeSpawn < 80) return;
         const x = (clientX - rect.left) / rect.width * SIZE;
         const y = (clientY - rect.top) / rect.height * SIZE;
-        spawnStar(x, y);
+        
+        let hit = false;
+        for (let i = targets.length - 1; i >= 0; i--) {
+          const t = targets[i];
+          const dx = t.x - x, dy = t.y - y;
+          if (dx*dx + dy*dy < 1200) { // 半径約34px以内
+            burstTarget(t);
+            hit = true;
+          }
+        }
+        if (!hit && !autoHanabi) {
+          spawnTarget(x, SIZE); // 下から打ち上げ
+        }
         lastSwipeSpawn = now;
       }
       canvas.addEventListener('mousedown', (e) => {
         touching = true;
-        maybeSpawnAt(e.clientX, e.clientY, canvas.getBoundingClientRect());
+        maybeHitOrSpawnAt(e.clientX, e.clientY, canvas.getBoundingClientRect());
       });
       canvas.addEventListener('mouseup', () => { touching = false; tiltX = 0; tiltY = 0; });
       canvas.addEventListener('mousemove', (e) => {
@@ -398,7 +447,6 @@
         const r = canvas.getBoundingClientRect();
         tiltX = ((e.clientX - r.left) / r.width * 2 - 1) * 0.8;
         tiltY = ((e.clientY - r.top) / r.height * 2 - 1) * 0.8;
-        maybeSpawnAt(e.clientX, e.clientY, r);
       });
       let lastTap = 0;
       canvas.addEventListener('click', () => { const n = Date.now(); if (n - lastTap < 400) shakeForce = 20; lastTap = n; });
@@ -409,7 +457,7 @@
         const t = e.touches[0], r = canvas.getBoundingClientRect();
         tiltX = ((t.clientX - r.left) / r.width * 2 - 1) * 0.8;
         tiltY = ((t.clientY - r.top) / r.height * 2 - 1) * 0.8;
-        maybeSpawnAt(t.clientX, t.clientY, r);
+        maybeHitOrSpawnAt(t.clientX, t.clientY, r);
       }
     }
     function initSensor() {
@@ -478,8 +526,8 @@
 
       // ツリー
       drawTree(CX, CY + RADIUS * 0.35);
-      // 雪だるま
-      drawSnowman(CX + 70, CY + RADIUS * 0.45);
+      // ひまわり
+      drawSunflower(CX + 70, CY + RADIUS * 0.45);
       // 家
       drawHouse(CX - 80, CY + RADIUS * 0.48);
 
@@ -503,18 +551,30 @@
       }
     }
 
-    function drawSnowman(x, y) {
-      ctx.fillStyle = '#f0f0f8'; ctx.beginPath(); ctx.arc(x, y + 8, 18, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = 'rgba(180,190,210,0.3)'; ctx.lineWidth = 1; ctx.stroke();
-      ctx.fillStyle = '#f4f4fc'; ctx.beginPath(); ctx.arc(x, y - 14, 13, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#222';
-      ctx.beginPath(); ctx.arc(x - 4, y - 17, 1.8, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(x + 4, y - 17, 1.8, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#ff8844'; ctx.beginPath(); ctx.moveTo(x, y - 13); ctx.lineTo(x + 7, y - 12); ctx.lineTo(x, y - 10); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#dd3344'; ctx.fillRect(x - 14, y - 4, 28, 5); ctx.fillRect(x + 8, y - 4, 6, 14);
-      ctx.fillStyle = '#222'; ctx.fillRect(x - 10, y - 27, 20, 3); ctx.fillRect(x - 7, y - 38, 14, 12);
-      ctx.fillStyle = '#222'; ctx.beginPath(); ctx.arc(x, y + 4, 2, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(x, y + 12, 2, 0, Math.PI * 2); ctx.fill();
+    function drawSunflower(x, y) {
+      // 茎
+      ctx.strokeStyle = '#2d8a2d'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(x, y + 20); ctx.lineTo(x, y - 5); ctx.stroke();
+      // 葉っぱ
+      ctx.fillStyle = '#3a9a30';
+      ctx.beginPath(); ctx.ellipse(x - 8, y + 10, 8, 4, 0.3, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x + 8, y + 5, 8, 4, -0.3, 0, Math.PI*2); ctx.fill();
+      // 花びら
+      ctx.save(); ctx.translate(x, y - 5);
+      ctx.fillStyle = '#ffcc00';
+      for (let i = 0; i < 12; i++) {
+        ctx.rotate(Math.PI * 2 / 12);
+        ctx.beginPath(); ctx.ellipse(0, -9, 3, 9, 0, 0, Math.PI*2); ctx.fill();
+      }
+      // 真ん中
+      ctx.fillStyle = '#6a4515';
+      ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI*2); ctx.fill();
+      // 種の模様
+      ctx.fillStyle = '#503010';
+      for (let i = 0; i < 6; i++) {
+        ctx.beginPath(); ctx.arc(Math.cos(i) * 3, Math.sin(i) * 3, 1, 0, Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
     }
 
     function drawHouse(x, y) {
@@ -583,54 +643,63 @@
     function update() {
       shakeForce *= 0.97; if (shakeForce < 0.05) shakeForce = 0;
 
+      // ターゲット（絵文字）の更新
+      for (const t of targets) {
+        t.age++;
+        t.x += t.vx; t.y += t.vy;
+        t.vy += 0.008; // わずかな重力減速
+        t.vx += tiltX * 0.05;
+        
+        if (autoHanabi && t.vy > 0 && t.life > 0) { // 最高点（ピーク）に達した瞬間に弾ける
+          burstTarget(t);
+        } else if (t.y < 35 && t.life > 0) { // ドームの枠外に出そうになったら強制的に弾ける
+          burstTarget(t);
+        }
+        if (t.y > SIZE + 20 || t.age > 800) t.life = 0;
+      }
+      targets = targets.filter(t => t.life > 0);
 
-      // 星の更新（すべて「ふんわり」で統一。夜空エリアを通過中に確率で停止）
-      for (const st of stars) {
-        st.shimmer += st.shimmerSpeed;
+      // ペットの更新（歩きながら跳ねる）
+      for (const p of pets) {
+        // 左右の移動
+        p.x += p.vx;
+        if (p.x < CX - RADIUS + 40 || p.x > CX + RADIUS - 40) {
+          p.vx *= -1;
+          p.faceRight = p.vx > 0;
+        } else if (Math.random() < 0.005) {
+          p.vx *= -1;
+          p.faceRight = p.vx > 0;
+        }
 
-        if (st.state === 'fixed') {
-          // 夜空にとどまって微かにゆらゆら
-          st.x += Math.sin(Date.now() * 0.0008 + st.shimmer) * 0.15;
-          st.y += Math.cos(Date.now() * 0.001 + st.shimmer * 1.3) * 0.1;
-        } else if (st.state === 'falling') {
-          // ふんわり重力
-          st.vy += 0.022 * st.depth;
-          st.vx += tiltX * 0.05 * st.depth;
-          st.vy += tiltY * 0.025 * st.depth;
-          st.vx *= 0.99; st.vy *= 0.99;
-          st.vx += Math.sin(Date.now() * 0.001 + st.shimmer) * 0.015;
-          st.x += st.vx; st.y += st.vy;
-
-          // 夜空エリアを通過中に確率で停止（starMode時・上限内のみ）
-          if (starMode
-            && fixedStarCount < MAX_FIXED_STARS
-            && st.y > SKY_TOP && st.y < SKY_BOTTOM
-            && Math.random() < FIX_PROB) {
-            st.state = 'fixed';
-            st.vx = 0; st.vy = 0;
-            fixedStarCount++;
-          }
-
-          // 地面に着地（さくら同様、粒子ごとにバラついた深さ）
-          if (st.y > st.landingY) {
-            st.state = 'landed';
-            spawnFlower(st.x, st.landingY);
-          }
-
-          // ドームの壁（跳ね返り）
-          const dx = st.x - CX, dy = st.y - CY, dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist > RADIUS - st.size - 2) {
-            const ang = Math.atan2(dy, dx);
-            st.x = CX + Math.cos(ang) * (RADIUS - st.size - 3);
-            st.y = CY + Math.sin(ang) * (RADIUS - st.size - 3);
-            st.vx *= -0.3; st.vy *= -0.3;
+        // ジャンプの物理
+        if (p.jump) {
+          p.vy = -3 - Math.random() * 2;
+          p.jump = false;
+        }
+        if (p.vy !== 0 || p.jumpY < 0) {
+          p.jumpY += p.vy;
+          p.vy += 0.4; // 重力
+          if (p.jumpY > 0) {
+            p.jumpY = 0;
+            p.vy = 0;
           }
         }
       }
-      // landed した星を除去
-      for (let i = stars.length - 1; i >= 0; i--) {
-        if (stars[i].state === 'landed') stars.splice(i, 1);
+
+      // 花火パーティクルの更新
+      for (const f of fireworks) {
+        f.x += f.vx; f.y += f.vy;
+        f.vy += 0.05; // 重力
+        f.vx *= 0.96; f.vy *= 0.96; // 空気抵抗
+        f.life -= f.decay;
+        f.vx += tiltX * 0.1; f.vy += tiltY * 0.1; // 傾きの影響
+        
+        if (f.style === 'bounce' && Math.random() < 0.05) {
+          f.vx += (Math.random() - 0.5) * 3;
+          f.vy -= Math.random() * 2;
+        }
       }
+      fireworks = fireworks.filter(f => f.life > 0);
     }
 
     // 流れ星
@@ -638,12 +707,13 @@
     let lastShootingStar = 0;
     function maybeSpawnShootingStar() {
       const now = Date.now();
-      if (now - lastShootingStar > 8000 + Math.random() * 7000) {
+      // 出現頻度を大幅にアップ（流星群！）
+      if (now - lastShootingStar > 500 + Math.random() * 2000) {
         lastShootingStar = now;
-        if (Math.random() < 0.6) {
+        if (Math.random() < 0.7) {
           shootingStars.push({
-            x: 40 + Math.random() * SIZE * 0.5, y: 30 + Math.random() * 60,
-            vx: 3 + Math.random() * 3, vy: 1 + Math.random() * 1.5, life: 1, trail: []
+            x: 40 + Math.random() * SIZE * 0.4, y: 20 + Math.random() * 50,
+            vx: 3.5 + Math.random() * 3.5, vy: 1 + Math.random() * 1.5, life: 1, trail: []
           });
         }
       }
@@ -652,10 +722,23 @@
       for (const ss of shootingStars) {
         ss.trail.unshift({ x: ss.x, y: ss.y, alpha: ss.life }); if (ss.trail.length > 12) ss.trail.pop();
         ss.x += ss.vx; ss.y += ss.vy; ss.life -= 0.025;
+
+        // 絵文字ターゲットとの当たり判定（流れ星が絵文字に当たったらドーン！）
+        for (let i = targets.length - 1; i >= 0; i--) {
+          const t = targets[i];
+          const dx = t.x - ss.x, dy = t.y - ss.y;
+          const distSq = dx * dx + dy * dy;
+          if (distSq < 900) { // 半径30px以内くらい
+            burstTarget(t);
+            ss.life = 0; // 当たった流れ星も消える
+            break;
+          }
+        }
       }
       shootingStars = shootingStars.filter(ss => ss.life > 0);
     }
     function drawShootingStars() {
+      ctx.save();
       for (const ss of shootingStars) {
         for (let i = 0; i < ss.trail.length; i++) {
           const t = ss.trail[i], a = t.alpha * (1 - i / ss.trail.length) * 0.6, w = (1 - i / ss.trail.length) * 2.5;
@@ -670,6 +753,52 @@
         ctx.fillStyle = 'rgba(255,255,200,0.4)'; ctx.beginPath(); ctx.arc(ss.x, ss.y, 4, 0, Math.PI * 2); ctx.fill();
         ctx.globalAlpha = 1;
       }
+      ctx.restore();
+    }
+
+    function drawTargets() {
+      ctx.save();
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = '28px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+      for (const t of targets) {
+        ctx.fillText(t.type.emoji, t.x, t.y);
+      }
+      ctx.restore();
+    }
+
+    function drawFireworks() {
+      ctx.save();
+      for (const f of fireworks) {
+        ctx.globalAlpha = Math.max(0, f.life);
+        ctx.fillStyle = f.color;
+        
+        if (f.style === 'sparkle') {
+          ctx.beginPath();
+          ctx.ellipse(f.x, f.y, 1.5, 5, Math.atan2(f.vy, f.vx), 0, Math.PI*2);
+          ctx.fill();
+        } else if (f.style === 'heart') {
+          ctx.beginPath(); ctx.arc(f.x, f.y, 2.5, 0, Math.PI*2); ctx.fill();
+        } else {
+          ctx.beginPath(); ctx.arc(f.x, f.y, 1.5 + f.life, 0, Math.PI*2); ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawPets() {
+      ctx.save();
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.font = '22px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+      for (const p of pets) {
+        ctx.save();
+        ctx.translate(p.x, p.y + p.jumpY);
+        if (p.faceRight) {
+          ctx.scale(-1, 1);
+        }
+        ctx.fillText(p.emoji, 0, 0);
+        ctx.restore();
+      }
+      ctx.restore();
     }
 
     function render() {
@@ -680,16 +809,17 @@
       ctx.clearRect(0, 0, SIZE, SIZE);
       drawBackground();
 
-      // 花（地面の上に描画）
+      // 花とペット（地面の上に描画、ドームでクリップ）
       ctx.save(); ctx.beginPath(); ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2); ctx.clip();
       drawFlowers();
+      drawPets();
       ctx.restore();
 
+      // 花火とターゲット
+      drawTargets();
+      drawFireworks();
+
       drawShootingStars();
-
-
-      // 星（星モード時のみ）
-      for (const st of stars) drawStarParticle(st);
 
       drawDomeGlass();
       requestAnimationFrame(render);
@@ -699,6 +829,8 @@
     initSensor();
     render();
 
+    startGameSpawn();
+
     // 時計
     function updateClock() {
       const now = new Date();
@@ -707,37 +839,11 @@
     }
     updateClock(); setInterval(updateClock, 1000);
 
-
-    // 星モード切替
-    const starBtn = document.getElementById('star-btn');
-    starBtn.addEventListener('click', () => {
-      starMode = !starMode;
-      starBtn.classList.toggle('star-active', starMode);
-      if (starMode) {
-        fixedStarCount = 0;
-        startStarSpawn();
-      } else {
-        stopStarSpawn();
-        // 固定されてる星を落とす
-        for (const st of stars) {
-          if (st.state === 'fixed') {
-            st.state = 'falling';
-            st.vy = 0.2 + Math.random() * 0.4; // ふんわり落下に合わせる
-          }
-        }
-        fixedStarCount = 0;
-      }
-    });
-
-    // どーんと一気に降らせる
-    const burstBtn = document.getElementById('burst-btn');
-    burstBtn.addEventListener('click', () => {
-      for (let i = 0; i < 40; i++) {
-        // 月の位置から少しバラけさせて放出
-        spawnStar(MOON_X + (Math.random() - 0.5) * 40, MOON_Y + (Math.random() - 0.5) * 40);
-      }
-      shakeForce = Math.min(shakeForce + 10, 22);
-      if (navigator.vibrate) { try { navigator.vibrate(60); } catch (e) { } }
+    // オートモード切替
+    const autoBtn = document.getElementById('auto-btn');
+    autoBtn.addEventListener('click', () => {
+      autoHanabi = !autoHanabi;
+      autoBtn.classList.toggle('active', autoHanabi);
     });
 
     // ===== トースト =====
