@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a1628">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Snow Domes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>ほしぞらアート</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      background: #0a1628;
+      min-height: 100vh; min-height: 100dvh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      overflow: hidden; touch-action: none; user-select: none;
+    }
+    h1 {
+      font-size: clamp(16px, 4.5vw, 20px); font-weight: 900;
+      color: rgba(200, 220, 255, 0.7); letter-spacing: 2px; margin-bottom: 8px;
+    }
+    #dome-wrap { position: relative; width: min(90vw, 380px); height: min(90vw, 380px); }
+    #dome-canvas {
+      width: 100%; height: 100%; border-radius: 50%;
+      box-shadow: 0 0 40px rgba(100, 150, 255, 0.15), 0 0 80px rgba(100, 150, 255, 0.08), inset 0 0 30px rgba(200, 220, 255, 0.05);
+    }
+    #base {
+      width: min(78vw, 340px); background: linear-gradient(180deg, #8a6a40, #6a4a28, #5a3a18);
+      border-radius: 0 0 20px 20px; margin: -6px auto 0;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+      position: relative; padding: 10px 14px 12px; display: flex; align-items: center; gap: 6px;
+    }
+    #clock {
+      margin-right: auto; font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: clamp(16px, 4.5vw, 22px); font-weight: 900;
+      color: rgba(255, 230, 180, 0.85); letter-spacing: 2px;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+    .base-btn {
+      font-family: 'Zen Maru Gothic', sans-serif; font-size: clamp(11px, 3vw, 13px);
+      font-weight: 700; padding: 6px 12px; border-radius: 20px;
+      border: 1.5px solid rgba(255, 220, 150, 0.3); background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 230, 180, 0.7); cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px;
+    }
+    .base-btn.active {
+      background: rgba(255, 220, 100, 0.2); border-color: rgba(255, 220, 100, 0.55); color: rgba(255, 240, 190, 0.95);
+    }
+    #controls { display: flex; gap: 8px; margin-top: 14px; justify-content: center; }
+    .ctl-btn {
+      font-family: 'Zen Maru Gothic', sans-serif; font-size: clamp(11px, 3vw, 13px);
+      font-weight: 700; padding: 7px 14px; border-radius: 20px;
+      border: 1.5px solid rgba(200, 220, 255, 0.22); background: rgba(20, 30, 60, 0.5);
+      color: rgba(200, 220, 255, 0.75); cursor: pointer; transition: all 0.2s;
+    }
+    .back-btn {
+      position: fixed; bottom: 10px; left: 10px; padding: 6px 14px;
+      font-size: 12px; font-weight: 700; border: 1px solid rgba(200, 220, 255, 0.22);
+      border-radius: 60px; background: rgba(20, 30, 60, 0.55); color: rgba(200, 220, 255, 0.75);
+      text-decoration: none; z-index: 100;
+    }
+    #toast {
+      position: fixed; bottom: 56px; left: 50%; transform: translateX(-50%);
+      padding: 10px 22px; background: rgba(20, 30, 60, 0.88); color: #fff;
+      border-radius: 24px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+
+<body>
+  <h1>🎨 ほしぞらアート 🎨</h1>
+  <div id="dome-wrap"><canvas id="dome-canvas"></canvas></div>
+  <div id="base">
+    <div id="clock">00:00</div>
+    <button class="base-btn" id="auto-btn">✨ じどう</button>
+  </div>
+  <div id="controls"><button class="ctl-btn" id="bgm-btn">🎵 おふ</button></div>
+  <div id="toast"></div>
+  <a class="back-btn" href="./index.html">← もどる</a>
+
+  <script>
+    // --- 1. 基本定数の定義（すべてに先んじて定義） ---
+    const canvas = document.getElementById('dome-canvas');
+    const ctx = canvas.getContext('2d');
+    const SIZE = 400;
+    canvas.width = SIZE; canvas.height = SIZE;
+    const CX = SIZE / 2;
+    const CY = SIZE / 2;
+    const RADIUS = SIZE * 0.45;
+    const GROUND_Y = CY + 100;
+
+    // --- 2. 状態変数の初期化 ---
+    let currentConstellation = null;
+    let autoMode = false;
+    let fireworks = [];
+    let moonAngle = -Math.PI / 4;
+    const ART_EMOJIS = ['🐕', '🐈', '🦋', '🐘', '🐧', '🐎', '🐬', '🐥', '🐢', '🐉', '🦀'];
+
+    const pets = [
+      { x: CX - 60, y: GROUND_Y + 15, baseY: GROUND_Y + 15, jumpY: 0, vy: 0, vx: 0.3, emoji: '🐕', faceRight: true, jump: false },
+      { x: CX + 60, y: GROUND_Y + 15, baseY: GROUND_Y + 15, jumpY: 0, vy: 0, vx: -0.2, emoji: '🐈', faceRight: false, jump: false }
+    ];
+
+    // --- 3. 解析用Canvasの準備 ---
+    const scanCanvas = document.createElement('canvas');
+    scanCanvas.width = 100; scanCanvas.height = 100;
+    const scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
+
+    // --- 4. 関数の定義 ---
+    function extractConstellation(emoji) {
+      scanCtx.clearRect(0, 0, 100, 100);
+      scanCtx.font = '70px serif';
+      scanCtx.textAlign = 'center';
+      scanCtx.textBaseline = 'middle';
+      scanCtx.fillText(emoji, 50, 50);
+
+      const imgData = scanCtx.getImageData(0, 0, 100, 100).data;
+      const points = [];
+      for (let y = 1; y < 99; y += 2) {
+        for (let x = 1; x < 99; x += 2) {
+          const idx = (y * 100 + x) * 4;
+          if (imgData[idx + 3] > 100) {
+            const neighbors = [((y-1)*100+x)*4+3, ((y+1)*100+x)*4+3, (y*100+x-1)*4+3, (y*100+x+1)*4+3];
+            if (neighbors.some(n => imgData[n] < 50)) {
+              points.push({ x: (x - 50) * 2.2 + CX, y: (y - 50) * 2.2 + CY - 20 });
+            }
+          }
+        }
+      }
+      if (points.length === 0) return null;
+      const sorted = [];
+      let curr = points[0]; sorted.push(curr); points.splice(0, 1);
+      while (points.length > 0) {
+        let nIdx = -1, mD = Infinity;
+        for (let i = 0; i < points.length; i++) {
+          const d = (points[i].x - curr.x)**2 + (points[i].y - curr.y)**2;
+          if (d < mD) { mD = d; nIdx = i; }
+        }
+        curr = points[nIdx]; sorted.push(curr); points.splice(nIdx, 1);
+      }
+      const sampled = [];
+      const count = 13 + Math.floor(Math.random() * 3);
+      const step = Math.max(1, Math.floor(sorted.length / count));
+      for (let i = 0; i < sorted.length; i += step) {
+        sampled.push({ ...sorted[i], connected: false, pulse: Math.random() * Math.PI });
+        if (sampled.length >= count) break;
+      }
+      return { emoji, points: sampled, currentIndex: 0, completed: false, fade: 0, completeTimer: 0 };
+    }
+
+    function nextArt() {
+      const emoji = ART_EMOJIS[Math.floor(Math.random() * ART_EMOJIS.length)];
+      currentConstellation = extractConstellation(emoji);
+    }
+
+    function burstConstellation() {
+      const c = currentConstellation;
+      c.points.forEach(p => {
+        // 数を半分程度（12個）に減らして負荷を軽減
+        const count = 12;
+        for (let i = 0; i < count; i++) {
+          const a = Math.random() * Math.PI * 2, s = 0.5 + Math.random() * 2.0;
+          fireworks.push({
+            x: p.x, y: p.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+            life: 1.8 + Math.random() * 1.2, color: '#fffde0', decay: 0.006 + Math.random() * 0.006,
+            isStar: true, pulse: Math.random() * Math.PI
+          });
+        }
+      });
+      if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
+    }
+
+    function update() {
+      if (!currentConstellation) return;
+      const c = currentConstellation;
+      c.points.forEach(p => p.pulse += 0.05);
+
+      for (const p of pets) {
+        // 左右へ歩く
+        p.x += p.vx;
+        const limit = RADIUS * 0.7;
+        if (Math.abs(p.x - CX) > limit) {
+          p.vx *= -1;
+          p.faceRight = p.vx > 0;
+        }
+
+        if (p.jump) { p.vy = -5; p.jump = false; }
+        p.vy += 0.25; p.jumpY += p.vy;
+        if (p.jumpY > 0) { p.jumpY = 0; p.vy = 0; }
+      }
+
+      if (c.completed) {
+        c.fade = Math.min(1, c.fade + 0.02);
+        if (++c.completeTimer === 1) {
+          if (c.emoji === '🐕') { pets[0].jump = true; setTimeout(() => pets[0].jump = true, 400); setTimeout(() => pets[0].jump = true, 800); }
+          else if (c.emoji === '🐈') { pets[1].jump = true; setTimeout(() => pets[1].jump = true, 400); setTimeout(() => pets[1].jump = true, 800); }
+          else { pets[0].jump = true; pets[1].jump = true; }
+        }
+        if (c.completeTimer > 180) { burstConstellation(); nextArt(); }
+        return;
+      }
+
+      if (autoMode && Math.random() < 0.03) {
+        const t = c.points[c.currentIndex]; t.connected = true;
+        for (let i = 0; i < 8; i++) {
+          const a = Math.random()*Math.PI*2, s = 0.5+Math.random()*2;
+          fireworks.push({ x: t.x, y: t.y, vx: Math.cos(a)*s, vy: Math.sin(a)*s, life: 0.8, color: '#aaddff', decay: 0.03 });
+        }
+        if (++c.currentIndex >= c.points.length) c.completed = true;
+      }
+    }
+
+    function drawBackground() {
+      ctx.save();
+      ctx.beginPath(); ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2); ctx.clip();
+      const g = ctx.createRadialGradient(CX, CY - 30, 20, CX, CY, RADIUS);
+      g.addColorStop(0, '#1a2a50'); g.addColorStop(1, '#080e20');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, SIZE, SIZE);
+      const mx = CX + Math.cos(moonAngle)*(RADIUS - 40), my = CY + Math.sin(moonAngle)*(RADIUS - 40);
+      ctx.fillStyle = '#ffe8aa'; ctx.beginPath(); ctx.arc(mx, my, 15, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#080e20'; ctx.beginPath(); ctx.arc(mx + 8, my - 4, 14, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#1a3a18'; ctx.beginPath(); ctx.moveTo(CX - RADIUS, GROUND_Y);
+      ctx.quadraticCurveTo(CX, GROUND_Y - 10, CX + RADIUS, GROUND_Y);
+      ctx.lineTo(CX + RADIUS, CY + RADIUS); ctx.lineTo(CX - RADIUS, CY + RADIUS); ctx.fill();
+      ctx.restore();
+    }
+
+    function drawConstellation() {
+      if (!currentConstellation) return;
+      const c = currentConstellation;
+      ctx.beginPath(); ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      let drawing = false;
+      for (const p of c.points) {
+        if (p.connected || c.completed) {
+          if (!drawing) { ctx.moveTo(p.x, p.y); drawing = true; } else ctx.lineTo(p.x, p.y);
+        } else drawing = false;
+      }
+      if (c.completed) {
+        ctx.lineTo(c.points[0].x, c.points[0].y);
+        ctx.strokeStyle = `rgba(255, 255, 220, ${0.6 + Math.sin(Date.now()*0.005)*0.3})`;
+        ctx.shadowBlur = 15; ctx.shadowColor = '#fff';
+      } else {
+        ctx.strokeStyle = 'rgba(150, 200, 255, 0.6)'; ctx.shadowBlur = 8; ctx.shadowColor = '#55aaff';
+      }
+      ctx.stroke(); ctx.shadowBlur = 0;
+
+      ctx.save();
+      ctx.globalAlpha = c.fade > 0 ? (0.05 + c.fade * 0.35) : 0.05;
+      ctx.font = '120px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(c.emoji, CX, CY - 20); ctx.restore(); ctx.globalAlpha = 1;
+
+      c.points.forEach((p, idx) => {
+        if (p.connected || c.completed) {
+          ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(Date.now()*0.002 + p.pulse);
+          ctx.fillStyle = '#fffde0'; ctx.shadowBlur = 10; ctx.shadowColor = '#fff';
+          for (let j = 0; j < 4; j++) { ctx.rotate(Math.PI/2); ctx.fillRect(-1, -6, 2, 12); ctx.fillRect(-6, -1, 12, 2); }
+          ctx.restore();
+        } else {
+          ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.beginPath(); ctx.arc(p.x, p.y, 1.5 + Math.sin(p.pulse)*0.5, 0, Math.PI * 2); ctx.fill();
+        }
+        if (idx === c.currentIndex && !c.completed) {
+          ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(p.x, p.y, 8 + Math.sin(Date.now()*0.01)*3, 0, Math.PI*2); ctx.stroke();
+        }
+      });
+    }
+
+    function drawFireworks() {
+      ctx.save();
+      for (const f of fireworks) {
+        ctx.globalAlpha = Math.max(0, f.life);
+        if (f.isStar) {
+          ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(Date.now()*0.002 + f.pulse);
+          ctx.fillStyle = '#fffde0'; ctx.shadowBlur = 8; ctx.shadowColor = '#fff';
+          for (let j = 0; j < 4; j++) { ctx.rotate(Math.PI/2); ctx.fillRect(-0.8, -4.5, 1.6, 9); ctx.fillRect(-4.5, -0.8, 9, 1.6); }
+          ctx.restore();
+        } else {
+          ctx.fillStyle = f.color; ctx.beginPath(); ctx.arc(f.x, f.y, 1.2, 0, Math.PI*2); ctx.fill();
+        }
+        f.x += f.vx; f.y += f.vy; f.vy += 0.02; f.life -= f.decay;
+      }
+      fireworks = fireworks.filter(f => f.life > 0); ctx.restore();
+    }
+
+    function render() {
+      update(); ctx.clearRect(0, 0, SIZE, SIZE);
+      drawBackground();
+      ctx.save(); ctx.beginPath(); ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2); ctx.clip();
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.font = '22px serif';
+      for (const p of pets) { ctx.save(); ctx.translate(p.x, p.y + p.jumpY); if (p.faceRight) ctx.scale(-1, 1); ctx.fillText(p.emoji, 0, 0); ctx.restore(); }
+      ctx.restore();
+      drawConstellation(); drawFireworks();
+      ctx.save(); ctx.beginPath(); ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2); ctx.clip();
+      const hl = ctx.createRadialGradient(CX-40, CY-60, 10, CX-40, CY-60, 120); hl.addColorStop(0, 'rgba(255,255,255,0.12)'); hl.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = hl; ctx.fillRect(0, 0, SIZE, SIZE); ctx.strokeStyle = 'rgba(200,220,255,0.15)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(CX, CY, RADIUS-2, 0, Math.PI*2); ctx.stroke(); ctx.restore();
+      requestAnimationFrame(render);
+    }
+
+    function handlePointer(px, py) {
+      if (!currentConstellation || currentConstellation.completed || autoMode) return;
+      const c = currentConstellation, rect = canvas.getBoundingClientRect();
+      const x = (px - rect.left)*(SIZE/rect.width), y = (py - rect.top)*(SIZE/rect.height);
+      const t = c.points[c.currentIndex], d = Math.hypot(t.x-x, t.y-y);
+      if (d < 30) {
+        t.connected = true;
+        for (let i = 0; i < 8; i++) {
+          const a = Math.random()*Math.PI*2, s = 0.5+Math.random()*2;
+          fireworks.push({ x: t.x, y: t.y, vx: Math.cos(a)*s, vy: Math.sin(a)*s, life: 0.8, color: '#aaddff', decay: 0.03 });
+        }
+        if (++c.currentIndex >= c.points.length) c.completed = true;
+        if (navigator.vibrate) navigator.vibrate(20);
+      }
+    }
+    canvas.addEventListener('mousemove', e => { if (e.buttons > 0) handlePointer(e.clientX, e.clientY); });
+    canvas.addEventListener('touchmove', e => { handlePointer(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }, { passive: false });
+    canvas.addEventListener('mousedown', e => handlePointer(e.clientX, e.clientY));
+    document.getElementById('auto-btn').addEventListener('click', e => { autoMode = !autoMode; e.target.classList.toggle('active', autoMode); });
+    setInterval(() => { const now = new Date(); document.getElementById('clock').textContent = String(now.getHours()).padStart(2, '0')+':'+String(now.getMinutes()).padStart(2, '0'); }, 1000);
+
+    // --- 5. 実行開始 ---
+    nextArt();
+    render();
+  </script>
+</body>
+</html>

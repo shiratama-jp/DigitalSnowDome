@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v22';
+const CACHE_VERSION = 'v29';
 const CACHE_STATIC = `snowdome-static-${CACHE_VERSION}`;
 const CACHE_FONTS = `snowdome-fonts-${CACHE_VERSION}`;
 
@@ -8,6 +8,7 @@ const PRECACHE_URLS = [
   './snowdome.html',
   './hoshifurase.html',
   './hanabi-hakanaki.html',
+  './hoshizora-art.html',
   './sakura-itsudemo.html',
   './snow-nyarm.html',
   './manifest.json',
