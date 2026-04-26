@@ -230,7 +230,7 @@
   <div id="dome-wrap"><canvas id="dome-canvas"></canvas></div>
   <div id="base">
     <div id="clock">00:00</div>
-    <button class="base-btn" id="auto-btn">🌠 じどう</button>
+    <button class="base-btn active" id="ippai-btn">✨ いっぱい</button>
   </div>
 
   <div id="controls">
@@ -296,7 +296,7 @@
     ];
     let targets = [];
     let fireworks = [];
-    let autoHanabi = false;
+    let autoHanabi = true;
     let gameTimer = null;
 
     // ペットたち
@@ -310,7 +310,7 @@
       targets.push({
         x: x !== undefined ? x : 40 + Math.random() * (SIZE - 80),
         y: y !== undefined ? y : SKY_BOTTOM + 20 + Math.random() * 40,
-        vy: -0.9 - Math.random() * 0.6, // 天井を突き抜けない程度に調整
+        vy: -0.9 - Math.random() * 0.6, // 元のゆったりした速度に戻す
         vx: (Math.random() - 0.5) * 0.4,
         type: type,
         life: 1,
@@ -676,7 +676,7 @@
         } else if (t.y < 35 && t.life > 0) { // ドームの枠外に出そうになったら強制的に弾ける
           burstTarget(t);
         }
-        if (t.y > SIZE + 20 || t.age > 800) t.life = 0;
+        if (t.y > SIZE + 20) t.life = 0;
       }
       targets = targets.filter(t => t.life > 0);
 
@@ -872,11 +872,20 @@
     }
     updateClock(); setInterval(updateClock, 1000);
 
-    // オートモード切替
-    const autoBtn = document.getElementById('auto-btn');
-    autoBtn.addEventListener('click', () => {
-      autoHanabi = !autoHanabi;
-      autoBtn.classList.toggle('active', autoHanabi);
+    // いっぱいボタン
+    const ippaiBtn = document.getElementById('ippai-btn');
+    ippaiBtn.addEventListener('click', () => {
+      // シェイクした時と同じロジックを15回実行
+      for (let i = 0; i < 15; i++) {
+        setTimeout(() => {
+          spawnTarget();
+        }, i * 60);
+      }
+      if (navigator.vibrate) navigator.vibrate([30, 20, 30]);
+      
+      // 一時的にさらに明るくする演出
+      ippaiBtn.style.transform = 'scale(0.95)';
+      setTimeout(() => ippaiBtn.style.transform = '', 100);
     });
 
     // ===== トースト =====

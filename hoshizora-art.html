@@ -73,6 +73,7 @@
       border-radius: 24px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity 0.3s;
     }
     #toast.show { opacity: 1; }
+    .ctl-btn.active { background: rgba(100, 180, 255, 0.22); border-color: rgba(100, 180, 255, 0.55); color: rgba(190, 225, 255, 0.98); }
   </style>
 </head>
 
@@ -81,9 +82,11 @@
   <div id="dome-wrap"><canvas id="dome-canvas"></canvas></div>
   <div id="base">
     <div id="clock">00:00</div>
-    <button class="base-btn" id="auto-btn">✨ じどう</button>
+    <button class="base-btn active" id="auto-btn">✨ じどう</button>
   </div>
-  <div id="controls"><button class="ctl-btn" id="bgm-btn">🎵 おふ</button></div>
+  <div id="controls">
+    <button class="ctl-btn" id="bgm-btn">🎵 おふ</button>
+  </div>
   <div id="toast"></div>
   <a class="back-btn" href="./index.html">← もどる</a>
 
@@ -100,7 +103,7 @@
 
     // --- 2. 状態変数の初期化 ---
     let currentConstellation = null;
-    let autoMode = false;
+    let autoMode = true; // デフォルトでオン
     let fireworks = [];
     let moonAngle = -Math.PI / 4;
     const ART_EMOJIS = ['🐕', '🐈', '🦋', '🐘', '🐧', '🐎', '🐬', '🐥', '🐢', '🐉', '🦀'];
@@ -322,7 +325,49 @@
     canvas.addEventListener('mousemove', e => { if (e.buttons > 0) handlePointer(e.clientX, e.clientY); });
     canvas.addEventListener('touchmove', e => { handlePointer(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }, { passive: false });
     canvas.addEventListener('mousedown', e => handlePointer(e.clientX, e.clientY));
-    document.getElementById('auto-btn').addEventListener('click', e => { autoMode = !autoMode; e.target.classList.toggle('active', autoMode); });
+    // トースト表示
+    let toastTimer = null;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // BGM再生
+    const BGM_TRACKS = [
+      null,
+      { name: '宇宙', src: './seishishitauchu.mp3' },
+      { name: '夢', src: './tenshinoyume.mp3' },
+      { name: '星', src: './yuubenohoshi.mp3' }
+    ];
+    let bgmIndex = 0;
+    let bgmAudio = null;
+    const bgmBtn = document.getElementById('bgm-btn');
+    bgmBtn.addEventListener('click', () => {
+      bgmIndex = (bgmIndex + 1) % BGM_TRACKS.length;
+      if (bgmAudio) { bgmAudio.pause(); bgmAudio.src = ''; bgmAudio = null; }
+      const track = BGM_TRACKS[bgmIndex];
+      if (track) {
+        bgmAudio = new Audio(track.src);
+        bgmAudio.loop = true;
+        bgmAudio.volume = 0.4;
+        bgmAudio.play().then(() => {
+          showToast(`再生中: ${track.name}`);
+        }).catch(() => showToast('再生できなかった（画面をタップしてみてね）'));
+        bgmBtn.textContent = `🎵 ${track.name}`;
+        bgmBtn.classList.add('active');
+      } else {
+        bgmBtn.textContent = '🎵 おふ';
+        bgmBtn.classList.remove('active');
+      }
+    });
+
+    document.getElementById('auto-btn').addEventListener('click', e => {
+      autoMode = !autoMode;
+      e.target.classList.toggle('active', autoMode);
+    });
     setInterval(() => { const now = new Date(); document.getElementById('clock').textContent = String(now.getHours()).padStart(2, '0')+':'+String(now.getMinutes()).padStart(2, '0'); }, 1000);
 
     // --- 5. 実行開始 ---
